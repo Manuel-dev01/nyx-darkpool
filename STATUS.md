@@ -12,7 +12,7 @@ _Last updated: 2026-06-20 (Phase 2 complete)_
 | Phase | Description                                   | Status      | Commit  |
 |-------|-----------------------------------------------|-------------|---------|
 | 1     | Workspace & State Initialization              | DONE        | 2721f31 |
-| 2     | Database Schema & Engine Boilerplate (Go/PG)  | DONE        | <pending> |
+| 2     | Database Schema & Engine Boilerplate (Go/PG)  | DONE        | 26ca3ed |
 | 3     | ZK Circuit Construction (Circom + snarkjs)    | PENDING     | —       |
 | 4     | Soroban Verifier Contract (Rust)              | PENDING     | —       |
 | 5     | Off-Chain Engine Logic (Go matcher + proofs)  | PENDING     | —       |
