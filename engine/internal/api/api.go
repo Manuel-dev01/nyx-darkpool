@@ -5,6 +5,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"log/slog"
 	"net/http"
@@ -12,15 +13,30 @@ import (
 	"github.com/nyx-darkpool/engine/internal/db"
 )
 
+// Pinger is the minimal database dependency the API needs: a context-bounded
+// connectivity check. *db.DB satisfies it. Depending on this narrow interface
+// (rather than the concrete pool) keeps the handlers unit-testable without a
+// live database.
+type Pinger interface {
+	Ping(ctx context.Context) error
+}
+
 // Server holds the dependencies for the HTTP handlers.
 type Server struct {
-	db     *db.DB
+	db     Pinger
 	logger *slog.Logger
 }
 
-// NewServer wires the API handlers to their dependencies.
+// NewServer wires the API handlers to their dependencies. *db.DB satisfies
+// Pinger, so production call sites are unchanged.
 func NewServer(database *db.DB, logger *slog.Logger) *Server {
-	return &Server{db: database, logger: logger}
+	return newServerWithPinger(database, logger)
+}
+
+// newServerWithPinger is the internal constructor used by tests to inject a
+// fake Pinger (e.g. one that always succeeds or always fails).
+func newServerWithPinger(p Pinger, logger *slog.Logger) *Server {
+	return &Server{db: p, logger: logger}
 }
 
 // Routes returns the configured HTTP handler for the engine.
