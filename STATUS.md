@@ -5,7 +5,7 @@
 > starting a phase and to `DONE` (with the commit short-hash) after a phase compiles,
 > passes validation, and is committed.
 
-_Last updated: 2026-06-20 (Phase 2 complete)_
+_Last updated: 2026-06-21 (Phase 2 complete; repo synced with remote)_
 
 ## Phase Ledger
 
@@ -17,6 +17,22 @@ _Last updated: 2026-06-20 (Phase 2 complete)_
 | 4     | Soroban Verifier Contract (Rust)              | PENDING     | —       |
 | 5     | Off-Chain Engine Logic (Go matcher + proofs)  | PENDING     | —       |
 | 6     | Orchestration & Dockerization                 | PENDING     | —       |
+
+> Housekeeping commit `059ccac` (after Phase 2) replaced the empty-directory
+> `.gitkeep` placeholders with descriptive `README.md` files in `circuits/`,
+> `contracts/`, `docs/`, and `scripts/`.
+
+## Repository State
+
+- **Branch:** `main` · **Remote:** `origin` (github.com/Manuel-dev01/nyx-darkpool)
+- **Local `HEAD` == `origin/main` == `059ccac`** — fully in sync (verified 2026-06-21).
+- **Commit policy:** commit locally only; the user performs all pushes. Commits carry
+  **no `Co-Authored-By` trailer** (the author is the user).
+- **History note:** the first two commits were rewritten once to remove a
+  `Co-Authored-By: Claude` trailer (hashes changed: `df5463a`→`2721f31`,
+  `5fa4734`→`4b5329d`) and the clean history was force-pushed. Remote and local now
+  agree, so normal `git pull` / `git push` work without conflict. The old hashes survive
+  only in some commit-message back-references and are harmless.
 
 ## Operating Directives (in force at all times)
 
