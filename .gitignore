@@ -51,6 +51,11 @@ target/
 Cargo.lock.orig
 .stellar/
 
+# ─── Toolchain binaries ────────────────────────────────────────────────────
+# Prebuilt circom downloaded by scripts/install_circom.sh (platform-specific
+# build artifact; also caught by the global *.exe rule above).
+/scripts/bin/
+
 # ─── Logs ──────────────────────────────────────────────────────────────────
 *.log
 logs/

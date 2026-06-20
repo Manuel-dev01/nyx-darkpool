@@ -1,0 +1,15 @@
+{
+  "name": "nyx-circuits",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Nyx darkpool ZK circuits — Circom 2.0 / Groth16 over BN254",
+  "scripts": {
+    "gen-input": "node scripts/gen_input.js",
+    "compile": "bash ../scripts/compile_circuit.sh"
+  },
+  "dependencies": {
+    "circomlib": "2.0.5",
+    "circomlibjs": "0.1.7",
+    "snarkjs": "^0.7.5"
+  }
+}
