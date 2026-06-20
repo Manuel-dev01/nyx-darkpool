@@ -11,7 +11,7 @@ _Last updated: 2026-06-20_
 
 | Phase | Description                                   | Status      | Commit  |
 |-------|-----------------------------------------------|-------------|---------|
-| 1     | Workspace & State Initialization              | IN PROGRESS | —       |
+| 1     | Workspace & State Initialization              | DONE        | 2721f31 |
 | 2     | Database Schema & Engine Boilerplate (Go/PG)  | PENDING     | —       |
 | 3     | ZK Circuit Construction (Circom + snarkjs)    | PENDING     | —       |
 | 4     | Soroban Verifier Contract (Rust)              | PENDING     | —       |
@@ -47,5 +47,5 @@ _Last updated: 2026-06-20_
 - [x] Directory topology: `/circuits` `/contracts` `/engine` `/docs` `/scripts`
 - [x] `.gitignore` (Go / Node / Rust / env)
 - [x] `STATUS.md` (this file)
-- [ ] `README.md`
-- [ ] Initial atomic commit → record hash above, flip Phase 1 to `DONE`
+- [x] `README.md`
+- [x] Initial atomic commit `2721f31` → Phase 1 `DONE`
