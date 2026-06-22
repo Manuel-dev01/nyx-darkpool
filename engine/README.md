@@ -61,6 +61,34 @@ go build ./...
 go run ./cmd/server          # serves /healthz on :8080
 ```
 
+## Testing
+
+```bash
+# Unit tests (no database needed)
+go test ./...
+
+# Integration + E2E tests (need a reachable Postgres)
+export NYX_TEST_DB_URL="postgres://nyx:nyx@localhost:5432/nyx?sslmode=disable"
+go test -tags=integration -p 1 ./...
+```
+
+DB-dependent tests are gated by both the `integration` build tag **and** `NYX_TEST_DB_URL`,
+so the default `go test ./...` runs fully offline.
+
+### Running tests with the race detector
+
+The manual requires `go test -race`. On Windows the race detector needs cgo + a C compiler.
+Install a MinGW toolchain to a **space-free path** (`ld` cannot link from a path containing
+spaces) — e.g. `C:\mingw64` (WinLibs UCRT) — then:
+
+```bash
+export PATH="/c/mingw64/bin:$PATH"
+export CGO_ENABLED=1
+go test -race ./...                                   # unit
+NYX_TEST_DB_URL="postgres://nyx:nyx@localhost:5432/nyx?sslmode=disable" \
+  go test -race -tags=integration -p 1 ./...          # + integration/e2e
+```
+
 ## Transaction discipline
 
 The matcher pairs orders inside `db.WithSerializableTx`, which runs the unit of work at

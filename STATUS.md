@@ -58,7 +58,7 @@ _Last updated: 2026-06-21 (Phase 3 complete + hardening/E2E retrofit)_
 | circomlib / circomlibjs | ✅ pinned | Phase 3 | 2.0.5 / 0.1.7 — matched Poseidon constants in-circuit ↔ off-chain |
 | stellar CLI | ❌ missing   | Phase 4    | + Rust `wasm32-unknown-unknown` target           |
 | golang-migrate (CLI) | ✅ installed | Phase 2 | `go install ...migrate/v4/cmd/migrate@latest` (postgres tag) |
-| gcc / MinGW (for `-race`) | ⚠️ installing | Phase 3+ | WinLibs via winget; needed for `go test -race` (cgo) on Windows. See note below. |
+| gcc / MinGW (for `-race`) | ✅ 16.1.0 | Phase 3+ | WinLibs UCRT at `C:\mingw64` (space-free path required by ld). Enables `go test -race` (cgo). |
 | postgres (Docker img) | ✅ present | Phases 2,6 | `postgres:latest` cached; compose pins `postgres:16` |
 | Docker daemon | ⚠️ manual  | Phases 2,6 | Docker Desktop must be running; engine not auto-started on boot |
 
@@ -119,13 +119,16 @@ _Last updated: 2026-06-21 (Phase 3 complete + hardening/E2E retrofit)_
   default build needs no database: `go test -tags=integration ./...` (with the env var set).
 - One-shot E2E: `NYX_TEST_DB_URL=... bash scripts/e2e_offchain.sh`.
 
-### Known follow-up — `go test -race`
+### `go test -race` — SATISFIED (2026-06-22)
 The manual mandates `go test -race ./...`. On Windows the race detector requires cgo + a C
-compiler, which this host lacked. A MinGW (WinLibs) toolchain is being installed via winget
-(slow network). **All tests pass without `-race`**; once `gcc` is on PATH, re-run
-`CGO_ENABLED=1 go test -race ./...` (unit) and `-tags=integration` for the full suite. This
-is the only outstanding item from the manual's TDD directive and does not affect correctness
-of the committed code.
+compiler. A WinLibs MinGW UCRT toolchain (gcc 16.1.0) is installed at **`C:\mingw64`** (a
+space-free path is required — `ld` cannot link from a path containing spaces). Results:
+
+- **Unit:** `PATH=/c/mingw64/bin:$PATH CGO_ENABLED=1 go test -race ./...` → all `ok`, no races.
+- **Integration + E2E:** `... NYX_TEST_DB_URL=... go test -race -tags=integration -p 1 ./...`
+  → all `ok`, **no data races** — incl. the 40001 concurrency test under the race detector.
+
+See `engine/README.md` → "Running tests with the race detector" for the exact commands.
 
 ## On-chain E2E (deferred to Phase 4)
 The current E2E verifies the proof **off-chain** (snarkjs). A `PHASE-4 HOOK` marker in
