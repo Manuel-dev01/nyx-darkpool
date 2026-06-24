@@ -146,11 +146,10 @@ The off-chain E2E verifies the proof with snarkjs; the `PHASE-4 HOOK` in
 - [x] **B** `cf9b035` `feat(contracts)` — BN254 Groth16 verifier + settlement seam
 - [x] **C** `539c79b` `feat(engine)` — env-gated Soroban on-chain bridge (`internal/onchain`)
 - [x] **D** `74b1a86` `feat(engine)` — wire e2e PHASE-4 hook + deploy/e2e-onchain scripts
-- [x] **E** `docs(status)` — this update
-- [~] Live deploy to a local Soroban network + on-chain e2e run — infrastructure complete and
-  committed (`scripts/deploy_contract.sh`, `scripts/e2e_onchain.sh`); the live RUN is pending a
-  slow `stellar/quickstart` Docker image pull (network-bound). Runnable once pulled:
-  `NYX_TEST_DB_URL=... bash scripts/e2e_onchain.sh`.
+- [x] **E** `c8865ac` `docs(status)` — Phase 4 done
+- [x] **F** `4d942f6` `fix(engine)` — stellar invoke arg format + tx-hash parsing (live-validated)
+- [x] **Live deploy + on-chain e2e run COMPLETE** — deployed to a local Soroban network
+  (Docker quickstart, **protocol 26**) and the real Phase-3 proof verified live on-chain.
 
 ### Verification evidence (Phase 4)
 - **Contract `cargo test`: 6/6 pass**, incl. `valid_proof_verifies` — the **REAL Phase-3 proof
@@ -163,6 +162,15 @@ The off-chain E2E verifies the proof with snarkjs; the `PHASE-4 HOOK` in
   defaults (`G2_ORDERING=c1c0`, `FE_ENDIAN=big`), so the real proof verified first try.
 - **Offline `go test ./...` stays green** — the on-chain bridge is disabled unless
   `NYX_SOROBAN_CONTRACT_ID` is set; `internal/onchain` has offline unit tests.
+- **LIVE on-chain run (local Soroban network, protocol 26):**
+  - Deployed `nyx-verifier`; `verify_and_settle` with the REAL proof → tx success, `Settled`
+    event emitted with the correct maker/taker commitments.
+  - `is_settled` → `true`; **replay → `Error(Contract, #3)` = AlreadySettled** (on-chain anti-replay).
+  - Full Go bridge E2E (`scripts/e2e_onchain.sh`): engine seeds match → proof → deploy →
+    invoke → `matches.onchain_status='confirmed'`, `settlement_tx=<64-hex>`. **PASS.**
+  - Protocol note: the network MUST run **protocol ≥ 26** (soroban-sdk 26.1 wasm + `g1_msm`).
+    Start with `stellar container start local --protocol-version 26` (default boots 25, which
+    fails contract upload).
 
 ### Toolchain install note (Phase 4)
 `rustup`'s downloader repeatedly stalled/hung on this network (the 101 MB `rustc` component;
