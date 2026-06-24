@@ -1,0 +1,49 @@
+/* ============================================================================
+   Nyx Darkpool — Brand Tokens
+   ----------------------------------------------------------------------------
+   Canonical design tokens extracted verbatim from `design-src/Nyx Brand Board.dc.html`.
+   This file is the single source of truth for the palette, type stacks, and motion.
+
+   NOTE ON SCOPE: the implemented pages (brand-board / landing / app / directions)
+   retain the design canvases' original *inline* styles to stay pixel-faithful to
+   the source. These custom properties are therefore the canonical *reference* and
+   drive the shared body/selection chrome via `base.css`; section internals remain
+   inline by design. See web/README.md.
+   ========================================================================== */
+
+:root {
+  /* ---- Type ------------------------------------------------------------- */
+  --nyx-font-display: 'Spectral', serif;        /* headlines, statements, wordmark */
+  --nyx-font-body:    'Archivo', sans-serif;    /* interface, paragraphs, nav      */
+  --nyx-font-mono:    'IBM Plex Mono', monospace; /* hashes, proofs, labels, prices */
+
+  /* ---- Neutral scale (dark-first, cool near-black) ---------------------- */
+  --nyx-void:      #07080A; /* primary background            */
+  --nyx-obsidian:  #0D0F12;
+  --nyx-slate:     #15181D;
+  --nyx-graphite:  #23272E;
+  --nyx-ash:       #565C64;
+  --nyx-smoke:     #8A9099;
+  --nyx-moon:      #ECEEF0; /* primary text                 */
+
+  /* common hairline borders seen across the canvases */
+  --nyx-border:      #16191D;
+  --nyx-border-cool: #13171C;
+  --nyx-border-slate:#15181D;
+
+  /* secondary text tones */
+  --nyx-text-muted:  #9aa0a8;
+  --nyx-text-faint:  #3D434B;
+
+  /* ---- Accent — "Lumen" (marks what is proven; used <= 10% of a surface) */
+  --nyx-lumen:       #3BD7E0;
+  --nyx-lumen-deep:  #0E7E86;
+  --nyx-lumen-veil:  #0A2E31;
+
+  /* ---- Functional (product surfaces only) ------------------------------ */
+  --nyx-bid:  #43C08A; /* green */
+  --nyx-ask:  #E05A6E; /* red   */
+
+  /* ---- Selection ------------------------------------------------------- */
+  --nyx-selection-bg: rgba(59, 215, 224, 0.22);
+}

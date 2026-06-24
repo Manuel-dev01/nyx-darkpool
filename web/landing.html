@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nyx Darkpool — Trade in the dark</title>
+<!--
+  Implemented from design-src/Nyx Landing.dc.html (Claude Design canvas).
+  DELIBERATE DIVERGENCE: the "How it works / Four steps. Nothing revealed." section
+  is rendered with the SCHEMATIC direction (Direction C) from
+  design-src/Nyx Directions.dc.html — a commit→prove→verify→settle node graph —
+  in place of the landing canvas's original row-list treatment. See web/README.md.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles/tokens.css">
+<link rel="stylesheet" href="./styles/base.css">
+</head>
+<body>
+
+<div style="background:#07080A; color:#ECEEF0; font-family:'Archivo',sans-serif; -webkit-font-smoothing:antialiased; overflow-x:hidden;">
+
+  <!-- ===================== NAV ===================== -->
+  <div style="position:sticky; top:0; z-index:50; background:rgba(7,8,10,0.82); backdrop-filter:blur(10px); border-bottom:1px solid #13171C;">
+    <div style="max-width:1280px; margin:0 auto; padding:20px 48px; display:flex; align-items:center; justify-content:space-between;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <svg width="20" height="20" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="#23272E" stroke-width="7"></circle><circle cx="50" cy="50" r="40" fill="none" stroke="#3BD7E0" stroke-width="7" stroke-linecap="round" stroke-dasharray="168 252" transform="rotate(-62 50 50)"></circle></svg>
+        <span style="font-family:'Spectral',serif; font-size:19px; letter-spacing:0.01em;">Nyx</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:38px;">
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; color:#8A9099; text-transform:uppercase;">Protocol</span>
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; color:#8A9099; text-transform:uppercase;">Proofs</span>
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; color:#8A9099; text-transform:uppercase;">Docs</span>
+        <span style="font-family:'Spectral',serif; font-size:15px; color:#ECEEF0; border-bottom:1px solid #3BD7E0; padding-bottom:3px;">Enter the pool&nbsp;→</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== HERO ===================== -->
+  <section data-screen-label="Hero" style="position:relative; max-width:1280px; margin:0 auto; padding:150px 48px 170px; min-height:88vh;">
+    <!-- eclipse bleeding off right -->
+    <svg width="820" height="820" viewBox="0 0 100 100" style="position:absolute; right:-260px; top:90px; opacity:0.92; animation:nyxFloat 11s ease-in-out infinite;"><circle cx="50" cy="50" r="44" fill="none" stroke="#13171C" stroke-width="0.7"></circle><circle cx="50" cy="50" r="44" fill="none" stroke="#3BD7E0" stroke-width="0.7" stroke-linecap="round" stroke-dasharray="150 277" transform="rotate(-72 50 50)"></circle></svg>
+
+    <div style="position:relative; max-width:880px;">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.26em; color:#3BD7E0; text-transform:uppercase; margin-bottom:52px;">Σ &nbsp; A dark pool for institutional RWA</div>
+      <h1 style="font-family:'Spectral',serif; font-weight:300; font-size:clamp(56px,8vw,104px); line-height:1.0; letter-spacing:-0.018em; margin:0; color:#ECEEF0;">The night that<br>even Zeus<br>would not <span style="font-style:italic; color:#3BD7E0;">cross.</span></h1>
+      <p style="font-family:'Spectral',serif; font-weight:300; font-size:23px; line-height:1.55; color:#9aa0a8; max-width:540px; margin:48px 0 0;">Nyx settles institutional size in the dark. Price and volume are sealed as commitments; a zero-knowledge proof — not your counterparty, not the chain — attests the match.</p>
+      <div style="display:flex; align-items:center; gap:36px; margin-top:52px;">
+        <span style="font-family:'Spectral',serif; font-size:20px; color:#07080A; background:#3BD7E0; padding:14px 26px;">Request desk access</span>
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.14em; color:#8A9099; text-transform:uppercase;">Read the spec →</span>
+      </div>
+    </div>
+
+    <!-- scroll cue -->
+    <div style="position:absolute; left:48px; bottom:56px; display:flex; align-items:center; gap:14px;">
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.24em; color:#3D434B; text-transform:uppercase;">Scroll</span>
+      <div style="width:42px; height:1px; background:#23272E;"></div>
+    </div>
+  </section>
+
+  <!-- ===================== MANIFESTO ===================== -->
+  <section data-screen-label="Manifesto" style="border-top:1px solid #13171C;">
+    <div style="max-width:1280px; margin:0 auto; padding:130px 48px; display:flex; gap:40px;">
+      <div style="flex:none; width:120px; padding-top:14px;">
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.18em; color:#3D434B;">01 / WHY</span>
+      </div>
+      <div style="flex:1; max-width:840px;">
+        <p style="font-family:'Spectral',serif; font-weight:300; font-size:clamp(30px,3.6vw,46px); line-height:1.34; letter-spacing:-0.005em; color:#ECEEF0; margin:0;">When a large order touches a public mempool, the market sees you coming. Price moves before you fill. <span style="color:#3BD7E0;">Nyx removes the tell.</span> Orders never reveal price or volume — only a commitment, and a proof that the match was honest.</p>
+        <div style="margin-top:72px; padding-left:40px; border-left:1px solid #23272E; max-width:560px;">
+          <p style="font-family:'Spectral',serif; font-style:italic; font-weight:300; font-size:27px; line-height:1.45; color:#9aa0a8; margin:0;">"Liquidity should not cost you your hand of cards."</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== HOW IT WORKS · SCHEMATIC ======================= -->
+  <!-- SWAP: Direction C (Schematic) settlement-path node graph, re-flowed from the
+       fixed 980px frame in design-src/Nyx Directions.dc.html into a landing section.
+       Replaces the landing canvas's original "Four steps. Nothing revealed." row-list. -->
+  <section data-screen-label="How it works" style="border-top:1px solid #13171C; position:relative; overflow:hidden; background-image:repeating-linear-gradient(0deg,#0d1014 0,#0d1014 1px,transparent 1px,transparent 44px),repeating-linear-gradient(90deg,#0d1014 0,#0d1014 1px,transparent 1px,transparent 44px);">
+
+    <!-- corner spec block (re-flowed from the schematic's top-right caption) -->
+    <div style="position:absolute; top:0; right:0; border-left:1px solid #15181D; border-bottom:1px solid #15181D; padding:14px 20px; text-align:right; background:#07080A;">
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.14em; color:#3BD7E0;">FIG. 01</div>
+      <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; color:#565C64; margin-top:3px;">NYX SETTLEMENT PATH</div>
+    </div>
+
+    <div style="max-width:1280px; margin:0 auto; padding:130px 48px;">
+      <!-- header: keep the landing rail label, render the schematic header -->
+      <div style="display:flex; gap:40px; margin-bottom:96px;">
+        <div style="flex:none; width:120px; padding-top:8px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.18em; color:#3D434B;">02 / HOW</span></div>
+        <div style="flex:1;">
+          <div style="display:flex; align-items:center; gap:11px; margin-bottom:30px;">
+            <svg width="18" height="18" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="#23272E" stroke-width="7"></circle><circle cx="50" cy="50" r="40" fill="none" stroke="#3BD7E0" stroke-width="7" stroke-linecap="round" stroke-dasharray="168 252" transform="rotate(-62 50 50)"></circle></svg>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.16em; color:#8A9099;">PROTOCOL // SHIELDED ORDER LIFECYCLE</span>
+          </div>
+          <h2 style="font-family:'Spectral',serif; font-weight:400; font-size:clamp(40px,5vw,54px); line-height:1.05; color:#ECEEF0; margin:0;">Four steps.<br><span style="font-style:italic; color:#3BD7E0;">Nothing revealed.</span></h2>
+        </div>
+      </div>
+
+      <!-- flow diagram -->
+      <div style="position:relative; margin-bottom:90px;">
+        <!-- connector line behind nodes -->
+        <svg width="100%" height="4" viewBox="0 0 1152 4" preserveAspectRatio="none" style="position:absolute; top:38px; left:0;">
+          <line x1="0" y1="2" x2="1152" y2="2" stroke="#23272E" stroke-width="1"></line>
+          <line x1="0" y1="2" x2="1152" y2="2" stroke="#3BD7E0" stroke-width="1" stroke-dasharray="10 10" style="animation:nyxDash 2.5s linear infinite; opacity:0.7;"></line>
+        </svg>
+
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:0; position:relative;">
+          <!-- node 1 -->
+          <div style="display:flex; flex-direction:column; align-items:center; padding:0 18px;">
+            <div style="width:78px; height:78px; border-radius:50%; border:1px solid #23272E; background:#08090B; display:flex; align-items:center; justify-content:center; position:relative; z-index:2;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:22px; color:#3BD7E0;">01</span>
+            </div>
+            <div style="font-family:'Spectral',serif; font-size:22px; color:#ECEEF0; margin-top:22px;">Commit</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8A9099; margin-top:8px;">Poseidon hash</div>
+            <div style="width:1px; height:30px; background:#15181D; margin:18px 0;"></div>
+            <div style="font-size:13px; line-height:1.55; color:#565C64; text-align:center; max-width:200px;">Price &amp; size never leave the client. The order exists only as a commitment.</div>
+          </div>
+          <!-- node 2 -->
+          <div style="display:flex; flex-direction:column; align-items:center; padding:0 18px;">
+            <div style="width:78px; height:78px; border-radius:50%; border:1px solid #23272E; background:#08090B; display:flex; align-items:center; justify-content:center; position:relative; z-index:2;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:22px; color:#3BD7E0;">02</span>
+            </div>
+            <div style="font-family:'Spectral',serif; font-size:22px; color:#ECEEF0; margin-top:22px;">Prove</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8A9099; margin-top:8px;">ZK circuit</div>
+            <div style="width:1px; height:30px; background:#15181D; margin:18px 0;"></div>
+            <div style="font-size:13px; line-height:1.55; color:#565C64; text-align:center; max-width:200px;">A proof attests maker ∩ taker intersect at a valid price and volume.</div>
+          </div>
+          <!-- node 3 -->
+          <div style="display:flex; flex-direction:column; align-items:center; padding:0 18px;">
+            <div style="width:78px; height:78px; border-radius:50%; border:1px solid #23272E; background:#08090B; display:flex; align-items:center; justify-content:center; position:relative; z-index:2;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:22px; color:#3BD7E0;">03</span>
+            </div>
+            <div style="font-family:'Spectral',serif; font-size:22px; color:#ECEEF0; margin-top:22px;">Verify</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8A9099; margin-top:8px;">Soroban · BN254</div>
+            <div style="width:1px; height:30px; background:#15181D; margin:18px 0;"></div>
+            <div style="font-size:13px; line-height:1.55; color:#565C64; text-align:center; max-width:200px;">A contract checks the proof on-chain using native BN254 host functions.</div>
+          </div>
+          <!-- node 4 -->
+          <div style="display:flex; flex-direction:column; align-items:center; padding:0 18px;">
+            <div style="width:78px; height:78px; border-radius:50%; border:1px solid #3BD7E0; background:#0A2E31; display:flex; align-items:center; justify-content:center; position:relative; z-index:2;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:22px; color:#3BD7E0;">04</span>
+            </div>
+            <div style="font-family:'Spectral',serif; font-size:22px; color:#ECEEF0; margin-top:22px;">Settle</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8A9099; margin-top:8px;">Atomic swap</div>
+            <div style="width:1px; height:30px; background:#15181D; margin:18px 0;"></div>
+            <div style="font-size:13px; line-height:1.55; color:#565C64; text-align:center; max-width:200px;">RWA ⇄ USDC change hands in a single atomic settlement. Done.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- bottom spec strip -->
+      <div style="border-top:1px solid #15181D; padding-top:22px; display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:24px;">
+        <div style="display:flex; gap:48px; flex-wrap:wrap;">
+          <div><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#3D434B; letter-spacing:0.1em; text-transform:uppercase;">Disclosure</div><div style="font-family:'IBM Plex Mono',monospace; font-size:16px; color:#ECEEF0; margin-top:6px;">0 bytes</div></div>
+          <div><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#3D434B; letter-spacing:0.1em; text-transform:uppercase;">Trust assumed</div><div style="font-family:'IBM Plex Mono',monospace; font-size:16px; color:#ECEEF0; margin-top:6px;">None</div></div>
+          <div><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#3D434B; letter-spacing:0.1em; text-transform:uppercase;">Settlement</div><div style="font-family:'IBM Plex Mono',monospace; font-size:16px; color:#3BD7E0; margin-top:6px;">Atomic</div></div>
+        </div>
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#07080A; background:#3BD7E0; padding:11px 18px; letter-spacing:0.04em;">READ THE SPEC →</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== WHAT YOU TRADE ===================== -->
+  <section data-screen-label="Asset classes" style="border-top:1px solid #13171C;">
+    <div style="max-width:1280px; margin:0 auto; padding:130px 48px;">
+      <div style="display:flex; gap:40px; margin-bottom:72px;">
+        <div style="flex:none; width:120px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.18em; color:#3D434B;">03 / WHAT</span></div>
+        <h2 style="font-family:'Spectral',serif; font-weight:300; font-size:clamp(34px,4vw,52px); line-height:1.08; color:#ECEEF0; margin:0; max-width:720px;">Real-world assets, traded in the dark.</h2>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 80px; border-top:1px solid #13171C;">
+        <div style="display:flex; align-items:baseline; justify-content:space-between; padding:30px 0; border-bottom:1px solid #13171C;"><span style="font-family:'Spectral',serif; font-size:25px; color:#ECEEF0;">U.S. Treasury bills</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64;">TBILL-26</span></div>
+        <div style="display:flex; align-items:baseline; justify-content:space-between; padding:30px 0; border-bottom:1px solid #13171C;"><span style="font-family:'Spectral',serif; font-size:25px; color:#ECEEF0;">Private credit</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64;">CRE-DEBT-A</span></div>
+        <div style="display:flex; align-items:baseline; justify-content:space-between; padding:30px 0; border-bottom:1px solid #13171C;"><span style="font-family:'Spectral',serif; font-size:25px; color:#ECEEF0;">Tokenized gold</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64;">GOLD-RWA</span></div>
+        <div style="display:flex; align-items:baseline; justify-content:space-between; padding:30px 0; border-bottom:1px solid #13171C;"><span style="font-family:'Spectral',serif; font-size:25px; color:#ECEEF0;">Infrastructure ABS</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64;">SOLAR-ABS</span></div>
+        <div style="display:flex; align-items:baseline; justify-content:space-between; padding:30px 0; border-bottom:1px solid #13171C;"><span style="font-family:'Spectral',serif; font-size:25px; color:#ECEEF0;">Real-estate debt</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64;">RE-DEBT-B</span></div>
+        <div style="display:flex; align-items:baseline; justify-content:space-between; padding:30px 0; border-bottom:1px solid #13171C;"><span style="font-family:'Spectral',serif; font-size:25px; color:#ECEEF0;">Carbon credits</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64;">CARBON-V</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== BUILT ON STELLAR ===================== -->
+  <section data-screen-label="Built on Stellar" style="border-top:1px solid #13171C; background:#0A0C0F;">
+    <div style="max-width:1280px; margin:0 auto; padding:130px 48px; display:flex; gap:64px; align-items:center; flex-wrap:wrap;">
+      <div style="flex:1; min-width:420px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.22em; color:#3BD7E0; text-transform:uppercase; margin-bottom:34px;">Built on Stellar</div>
+        <h2 style="font-family:'Spectral',serif; font-weight:300; font-size:clamp(34px,4vw,50px); line-height:1.12; color:#ECEEF0; margin:0; max-width:560px;">Proofs verified on-chain, natively.</h2>
+        <p style="font-size:17px; line-height:1.65; color:#8A9099; max-width:520px; margin:30px 0 0;">Nyx settles on Stellar because Protocol 26 ships BN254 pairing as native host functions — the elliptic-curve operations a zero-knowledge proof needs to be checked directly in a Soroban contract. No bridge, no off-chain verifier, no trust.</p>
+      </div>
+      <div style="flex:none; width:340px; display:flex; flex-direction:column; gap:1px; background:#15181D; border:1px solid #15181D;">
+        <div style="background:#07080A; padding:22px 24px; display:flex; justify-content:space-between; align-items:baseline;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64; letter-spacing:0.1em;">NETWORK</span><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#ECEEF0;">Stellar · P26</span></div>
+        <div style="background:#07080A; padding:22px 24px; display:flex; justify-content:space-between; align-items:baseline;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64; letter-spacing:0.1em;">PAIRING</span><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#ECEEF0;">BN254 host fn</span></div>
+        <div style="background:#07080A; padding:22px 24px; display:flex; justify-content:space-between; align-items:baseline;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64; letter-spacing:0.1em;">CONTRACT</span><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#ECEEF0;">Soroban</span></div>
+        <div style="background:#07080A; padding:22px 24px; display:flex; justify-content:space-between; align-items:baseline;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64; letter-spacing:0.1em;">SETTLE</span><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#3BD7E0;">~5s · atomic</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PROOF STATS ===================== -->
+  <section data-screen-label="Trust" style="border-top:1px solid #13171C;">
+    <div style="max-width:1280px; margin:0 auto; padding:120px 48px; display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:#13171C; border:1px solid #13171C;">
+      <div style="background:#07080A; padding:54px 40px;"><div style="font-family:'Spectral',serif; font-weight:300; font-size:52px; color:#3BD7E0; line-height:1;">0 bytes</div><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#8A9099; margin-top:16px; letter-spacing:0.08em;">of price or volume disclosed</div></div>
+      <div style="background:#07080A; padding:54px 40px;"><div style="font-family:'Spectral',serif; font-weight:300; font-size:52px; color:#ECEEF0; line-height:1;">No operator</div><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#8A9099; margin-top:16px; letter-spacing:0.08em;">to trust between counterparties</div></div>
+      <div style="background:#07080A; padding:54px 40px;"><div style="font-family:'Spectral',serif; font-weight:300; font-size:52px; color:#ECEEF0; line-height:1;">Atomic</div><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#8A9099; margin-top:16px; letter-spacing:0.08em;">settlement — all of it, or none</div></div>
+    </div>
+  </section>
+
+  <!-- ===================== ACCESS CTA ===================== -->
+  <section data-screen-label="Access" style="border-top:1px solid #13171C; position:relative; overflow:hidden;">
+    <svg width="680" height="680" viewBox="0 0 100 100" style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); opacity:0.5;"><circle cx="50" cy="50" r="44" fill="none" stroke="#13171C" stroke-width="0.6"></circle><circle cx="50" cy="50" r="44" fill="none" stroke="#3BD7E0" stroke-width="0.6" stroke-linecap="round" stroke-dasharray="150 277" transform="rotate(-72 50 50)"></circle></svg>
+    <div style="position:relative; max-width:1280px; margin:0 auto; padding:170px 48px; text-align:center;">
+      <h2 style="font-family:'Spectral',serif; font-weight:300; font-size:clamp(46px,6vw,82px); line-height:1.02; letter-spacing:-0.015em; color:#ECEEF0; margin:0;">Enter the <span style="font-style:italic; color:#3BD7E0;">pool.</span></h2>
+      <p style="font-family:'Spectral',serif; font-weight:300; font-size:21px; line-height:1.5; color:#9aa0a8; max-width:480px; margin:32px auto 0;">Access is permissioned. Desks onboard by invitation, with a signed key.</p>
+      <div style="display:flex; align-items:center; justify-content:center; gap:34px; margin-top:54px;">
+        <span style="font-family:'Spectral',serif; font-size:20px; color:#07080A; background:#3BD7E0; padding:15px 30px;">Request desk access</span>
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.14em; color:#8A9099; text-transform:uppercase;">Talk to us →</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FOOTER ===================== -->
+  <div style="border-top:1px solid #13171C;">
+    <div style="max-width:1280px; margin:0 auto; padding:48px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:18px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <svg width="18" height="18" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="#23272E" stroke-width="7"></circle><circle cx="50" cy="50" r="40" fill="none" stroke="#3BD7E0" stroke-width="7" stroke-linecap="round" stroke-dasharray="168 252" transform="rotate(-62 50 50)"></circle></svg>
+        <span style="font-family:'Spectral',serif; font-size:16px; color:#8A9099;">Nyx Darkpool</span>
+      </div>
+      <div style="display:flex; gap:30px;">
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#565C64; text-transform:uppercase;">Protocol</span>
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#565C64; text-transform:uppercase;">Proofs</span>
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#565C64; text-transform:uppercase;">Docs</span>
+      </div>
+      <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.14em; color:#3D434B; text-transform:uppercase;">© 2026 · Built on Stellar · Trade in the dark</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

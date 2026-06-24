@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #e7e5df; }
+  ::selection { background: rgba(59,215,224,0.22); color: #ECEEF0; }
+  @keyframes nyxBlink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+  @keyframes nyxPulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  @keyframes nyxSpin { to { transform: rotate(360deg); } }
+</style>
+</helmet>
+
+<div style="width:max-content; min-width:100%; min-height:100vh; box-sizing:border-box; padding:48px; background:#e7e5df; font-family:'Archivo',sans-serif;">
+
+  <!-- heading -->
+  <div style="margin-bottom:40px; max-width:820px;">
+    <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.2em; color:#8a8780; text-transform:uppercase; margin-bottom:14px;">Nyx Darkpool · Application Flow</div>
+    <h1 style="font-family:'Spectral',serif; font-weight:400; font-size:36px; line-height:1.1; color:#1a1916; margin:0 0 10px;">The logical flow, end to end.</h1>
+    <p style="font-size:15px; line-height:1.6; color:#56524b; margin:0;">Six product screens — from desk access through a shielded order's life: compose &amp; seal → rest in the pool → match, prove &amp; verify → atomic settlement. Scroll right to follow the path.</p>
+  </div>
+
+  <div style="display:flex; gap:48px; align-items:flex-start;">
+
+    <!-- ============ 01 · ACCESS ============ -->
+    <div style="flex:none; width:1200px;">
+      <div style="margin-bottom:16px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.16em; color:#1a1916; text-transform:uppercase;">01 · Access</div>
+        <div style="font-size:13px; color:#56524b; margin-top:4px;">Permissioned entry. Desks authenticate with a signed key — no passwords, no email.</div>
+      </div>
+      <div data-screen-label="01 Access" style="height:780px; background:#07080A; border-radius:2px; box-shadow:0 1px 3px rgba(0,0,0,.18); overflow:hidden; color:#ECEEF0; position:relative; display:flex; align-items:center; justify-content:center;">
+        <svg width="620" height="620" viewBox="0 0 100 100" style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); opacity:0.4;"><circle cx="50" cy="50" r="44" fill="none" stroke="#13171C" stroke-width="0.6"></circle><circle cx="50" cy="50" r="44" fill="none" stroke="#3BD7E0" stroke-width="0.6" stroke-linecap="round" stroke-dasharray="150 277" transform="rotate(-72 50 50)"></circle></svg>
+        <div style="position:relative; width:400px; text-align:center;">
+          <svg width="40" height="40" viewBox="0 0 100 100" style="margin-bottom:26px;"><circle cx="50" cy="50" r="40" fill="none" stroke="#23272E" stroke-width="5"></circle><circle cx="50" cy="50" r="40" fill="none" stroke="#3BD7E0" stroke-width="5" stroke-linecap="round" stroke-dasharray="168 252" transform="rotate(-62 50 50)"></circle></svg>
+          <div style="font-family:'Spectral',serif; font-size:30px; color:#ECEEF0;">Nyx <span style="color:#565C64;">Darkpool</span></div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.2em; color:#3BD7E0; text-transform:uppercase; margin-top:10px;">Desk access</div>
+
+          <div style="margin-top:40px; border:1px solid #15181D; background:#0A0C0F; padding:8px; display:flex; align-items:center; gap:10px;">
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#3D434B; padding-left:8px;">KEY</span>
+            <span style="flex:1; text-align:left; font-family:'IBM Plex Mono',monospace; font-size:13px; color:#8A9099; letter-spacing:0.04em;">ssh-ed25519 ··········· 7af0</span>
+          </div>
+          <div style="margin-top:14px; background:#3BD7E0; color:#07080A; font-family:'Archivo',sans-serif; font-weight:600; font-size:14px; padding:14px; letter-spacing:0.02em;">Authenticate with signed key</div>
+
+          <div style="margin-top:30px; display:flex; align-items:center; justify-content:center; gap:9px;">
+            <span style="width:6px; height:6px; border-radius:50%; background:#43C08A; animation:nyxPulse 2s ease-in-out infinite;"></span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.14em; color:#565C64; text-transform:uppercase;">Permissioned · by invitation</span>
+          </div>
+        </div>
+        <div style="position:absolute; left:28px; bottom:24px; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.14em; color:#2A2F36; text-transform:uppercase;">Stellar · P26 · BN254</div>
+      </div>
+    </div>
+
+    <!-- ============ 02 · DESK ============ -->
+    <div style="flex:none; width:1200px;">
+      <div style="margin-bottom:16px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.16em; color:#1a1916; text-transform:uppercase;">02 · Desk</div>
+        <div style="font-size:13px; color:#56524b; margin-top:4px;">The overview. Open orders, what's resting in the pool, settled flow, net exposure.</div>
+      </div>
+      <div data-screen-label="02 Desk" style="height:780px; background:#07080A; border-radius:2px; box-shadow:0 1px 3px rgba(0,0,0,.18); overflow:hidden; color:#ECEEF0; display:flex;">
+        <!-- sidebar -->
+        <div style="width:208px; flex:none; border-right:1px solid #13171C; display:flex; flex-direction:column; background:#08090B;">
+          <div style="padding:22px 22px; border-bottom:1px solid #13171C; display:flex; align-items:center; gap:10px;">
+            <svg width="18" height="18" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="#23272E" stroke-width="7"></circle><circle cx="50" cy="50" r="40" fill="none" stroke="#3BD7E0" stroke-width="7" stroke-linecap="round" stroke-dasharray="168 252" transform="rotate(-62 50 50)"></circle></svg>
+            <span style="font-family:'Spectral',serif; font-size:17px;">Nyx</span>
+          </div>
+          <div style="padding:16px 0; flex:1;">
+            <div style="padding:11px 22px; border-left:2px solid #3BD7E0; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#ECEEF0; letter-spacing:0.06em;">Desk</div>
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64; letter-spacing:0.06em;">Compose</div>
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64; letter-spacing:0.06em;">Pool</div>
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64; letter-spacing:0.06em;">Proofs</div>
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64; letter-spacing:0.06em;">Settled</div>
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64; letter-spacing:0.06em;">Positions</div>
+          </div>
+          <div style="padding:18px 22px; border-top:1px solid #13171C;">
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#565C64; letter-spacing:0.08em;">MERIDIAN CAPITAL</div>
+            <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#3D434B; margin-top:5px;">Desk 04 · key 7af0</div>
+          </div>
+        </div>
+        <!-- main -->
+        <div style="flex:1; display:flex; flex-direction:column; min-width:0;">
+          <div style="height:60px; flex:none; border-bottom:1px solid #13171C; display:flex; align-items:center; justify-content:space-between; padding:0 28px;">
+            <div style="font-family:'Spectral',serif; font-size:20px; color:#ECEEF0;">Desk</div>
+            <div style="display:flex; align-items:center; gap:9px;"><span style="width:6px; height:6px; border-radius:50%; background:#43C08A; animation:nyxPulse 2s ease-in-out infinite;"></span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8A9099; letter-spacing:0.1em;">LIVE · 14:22 UTC</span></div>
+          </div>
+          <div style="flex:1; padding:28px; overflow:hidden;">
+            <!-- stat row -->
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:#13171C; border:1px solid #13171C; margin-bottom:24px;">
+              <div style="background:#07080A; padding:20px 22px;"><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#3D434B; letter-spacing:0.1em; text-transform:uppercase;">Open orders</div><div style="font-family:'IBM Plex Mono',monospace; font-size:26px; color:#ECEEF0; margin-top:8px;">7</div></div>
+              <div style="background:#07080A; padding:20px 22px;"><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#3D434B; letter-spacing:0.1em; text-transform:uppercase;">Resting in pool</div><div style="font-family:'IBM Plex Mono',monospace; font-size:26px; color:#3BD7E0; margin-top:8px;">4</div></div>
+              <div style="background:#07080A; padding:20px 22px;"><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#3D434B; letter-spacing:0.1em; text-transform:uppercase;">Settled · 24h</div><div style="font-family:'IBM Plex Mono',monospace; font-size:26px; color:#ECEEF0; margin-top:8px;">$48.0M</div></div>
+              <div style="background:#07080A; padding:20px 22px;"><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#3D434B; letter-spacing:0.1em; text-transform:uppercase;">Net exposure</div><div style="font-family:'IBM Plex Mono',monospace; font-size:26px; color:#ECEEF0; margin-top:8px;">+$12.4M</div></div>
+            </div>
+            <div style="display:flex; gap:24px;">
+              <!-- open orders -->
+              <div style="flex:1.5; border:1px solid #13171C; min-width:0;">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid #13171C;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; color:#8A9099;">OPEN ORDERS</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#07080A; background:#3BD7E0; padding:6px 12px;">+ New</span></div>
+                <div style="display:grid; grid-template-columns:1.4fr 0.6fr 1fr 1fr; gap:12px; padding:11px 20px; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; color:#3D434B; border-bottom:1px solid #13171C;"><span>PAIR</span><span>SIDE</span><span>COMMITMENT</span><span style="text-align:right;">STATUS</span></div>
+                <div style="display:grid; grid-template-columns:1.4fr 0.6fr 1fr 1fr; gap:12px; padding:14px 20px; font-family:'IBM Plex Mono',monospace; font-size:12px; border-bottom:1px solid #0E1115; align-items:center;"><span style="color:#ECEEF0;">TBILL-26/USDC</span><span style="color:#43C08A;">BID</span><span style="color:#565C64;">0x9f3a…c204</span><span style="text-align:right; color:#3BD7E0;">● PROVEN</span></div>
+                <div style="display:grid; grid-template-columns:1.4fr 0.6fr 1fr 1fr; gap:12px; padding:14px 20px; font-family:'IBM Plex Mono',monospace; font-size:12px; border-bottom:1px solid #0E1115; align-items:center; background:#0A0C0F;"><span style="color:#ECEEF0;">GOLD-RWA/USDC</span><span style="color:#E05A6E;">ASK</span><span style="color:#565C64;">0x2b81…7af0</span><span style="text-align:right; color:#8A9099;">● SEALED</span></div>
+                <div style="display:grid; grid-template-columns:1.4fr 0.6fr 1fr 1fr; gap:12px; padding:14px 20px; font-family:'IBM Plex Mono',monospace; font-size:12px; border-bottom:1px solid #0E1115; align-items:center;"><span style="color:#ECEEF0;">CRE-DEBT-A/USDC</span><span style="color:#43C08A;">BID</span><span style="color:#565C64;">0xa10c…9b22</span><span style="text-align:right; color:#3BD7E0;">● PROVEN</span></div>
+                <div style="display:grid; grid-template-columns:1.4fr 0.6fr 1fr 1fr; gap:12px; padding:14px 20px; font-family:'IBM Plex Mono',monospace; font-size:12px; border-bottom:1px solid #0E1115; align-items:center; background:#0A0C0F;"><span style="color:#ECEEF0;">SOLAR-ABS/USDC</span><span style="color:#43C08A;">BID</span><span style="color:#565C64;">0x81b0…2e6c</span><span style="text-align:right; color:#8A9099;">● SEALED</span></div>
+                <div style="display:grid; grid-template-columns:1.4fr 0.6fr 1fr 1fr; gap:12px; padding:14px 20px; font-family:'IBM Plex Mono',monospace; font-size:12px; align-items:center;"><span style="color:#ECEEF0;">TBILL-26/USDC</span><span style="color:#E05A6E;">ASK</span><span style="color:#565C64;">0xc3f9…40ab</span><span style="text-align:right; color:#43C08A;">● MATCHED</span></div>
+              </div>
+              <!-- activity -->
+              <div style="flex:1; border:1px solid #13171C; min-width:0;">
+                <div style="padding:14px 20px; border-bottom:1px solid #13171C;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; color:#8A9099;">ACTIVITY</span></div>
+                <div style="padding:18px 20px; display:flex; flex-direction:column; gap:16px;">
+                  <div style="display:flex; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#3D434B; flex:none; width:46px;">14:22</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8A9099; line-height:1.5;">Order <span style="color:#3BD7E0;">#4471</span> proof verified on-chain.</span></div>
+                  <div style="display:flex; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#3D434B; flex:none; width:46px;">14:19</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8A9099; line-height:1.5;">Match found for <span style="color:#43C08A;">#4470</span> in pool.</span></div>
+                  <div style="display:flex; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#3D434B; flex:none; width:46px;">14:17</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8A9099; line-height:1.5;">Order #4469 sealed &amp; broadcast.</span></div>
+                  <div style="display:flex; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#3D434B; flex:none; width:46px;">14:11</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8A9099; line-height:1.5;">Settled <span style="color:#43C08A;">$11.2M</span> · GOLD-RWA.</span></div>
+                  <div style="display:flex; gap:12px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#3D434B; flex:none; width:46px;">14:03</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8A9099; line-height:1.5;">Order #4468 sealed &amp; broadcast.</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 03 · COMPOSE ============ -->
+    <div style="flex:none; width:1200px;">
+      <div style="margin-bottom:16px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.16em; color:#1a1916; text-transform:uppercase;">03 · Compose &amp; seal</div>
+        <div style="font-size:13px; color:#56524b; margin-top:4px;">The order is built and sealed <em>on the device</em>. Only the Poseidon commitment is broadcast.</div>
+      </div>
+      <div data-screen-label="03 Compose" style="height:780px; background:#07080A; border-radius:2px; box-shadow:0 1px 3px rgba(0,0,0,.18); overflow:hidden; color:#ECEEF0; display:flex;">
+        <div style="width:208px; flex:none; border-right:1px solid #13171C; display:flex; flex-direction:column; background:#08090B;">
+          <div style="padding:22px; border-bottom:1px solid #13171C; display:flex; align-items:center; gap:10px;"><svg width="18" height="18" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="#23272E" stroke-width="7"></circle><circle cx="50" cy="50" r="40" fill="none" stroke="#3BD7E0" stroke-width="7" stroke-linecap="round" stroke-dasharray="168 252" transform="rotate(-62 50 50)"></circle></svg><span style="font-family:'Spectral',serif; font-size:17px;">Nyx</span></div>
+          <div style="padding:16px 0; flex:1;">
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64;">Desk</div>
+            <div style="padding:11px 22px; border-left:2px solid #3BD7E0; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#ECEEF0;">Compose</div>
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64;">Pool</div>
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64;">Proofs</div>
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64;">Settled</div>
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64;">Positions</div>
+          </div>
+          <div style="padding:18px 22px; border-top:1px solid #13171C;"><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#565C64; letter-spacing:0.08em;">MERIDIAN CAPITAL</div><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#3D434B; margin-top:5px;">Desk 04 · key 7af0</div></div>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; min-width:0;">
+          <div style="height:60px; flex:none; border-bottom:1px solid #13171C; display:flex; align-items:center; padding:0 28px;"><div style="font-family:'Spectral',serif; font-size:20px; color:#ECEEF0;">Compose order</div></div>
+          <div style="flex:1; display:flex; min-height:0;">
+            <!-- form -->
+            <div style="flex:1.2; padding:28px; border-right:1px solid #13171C; display:flex; flex-direction:column; gap:22px;">
+              <div><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; color:#3D434B; text-transform:uppercase; margin-bottom:9px;">Pair</div><div style="border:1px solid #15181D; background:#0A0C0F; padding:14px 16px; display:flex; justify-content:space-between; align-items:center;"><span style="font-family:'Archivo',sans-serif; font-weight:600; font-size:15px; color:#ECEEF0;">US-TBILL-26 / USDC</span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64;">▾</span></div></div>
+              <div><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; color:#3D434B; text-transform:uppercase; margin-bottom:9px;">Side</div><div style="display:grid; grid-template-columns:1fr 1fr; gap:1px; background:#15181D; border:1px solid #15181D;"><div style="background:#0F2A1F; padding:13px; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:13px; color:#43C08A; letter-spacing:0.1em;">BID · BUY</div><div style="background:#0A0C0F; padding:13px; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:13px; color:#565C64; letter-spacing:0.1em;">ASK · SELL</div></div></div>
+              <div style="display:flex; gap:16px;">
+                <div style="flex:1;"><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; color:#3D434B; text-transform:uppercase; margin-bottom:9px;">Limit price</div><div style="border:1px solid #15181D; background:#0A0C0F; padding:14px 16px; display:flex; justify-content:space-between;"><span style="font-family:'IBM Plex Mono',monospace; font-size:15px; color:#ECEEF0;">99.84</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#3D434B;">USDC</span></div></div>
+                <div style="flex:1;"><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; color:#3D434B; text-transform:uppercase; margin-bottom:9px;">Size</div><div style="border:1px solid #15181D; background:#0A0C0F; padding:14px 16px; display:flex; justify-content:space-between;"><span style="font-family:'IBM Plex Mono',monospace; font-size:15px; color:#ECEEF0;">5,000,000</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#3D434B;">units</span></div></div>
+              </div>
+              <div><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:0.1em; color:#3D434B; text-transform:uppercase; margin-bottom:9px;">Time in force</div><div style="display:flex; gap:10px;"><span style="border:1px solid #3BD7E0; color:#3BD7E0; font-family:'IBM Plex Mono',monospace; font-size:11px; padding:8px 14px;">GTC</span><span style="border:1px solid #15181D; color:#565C64; font-family:'IBM Plex Mono',monospace; font-size:11px; padding:8px 14px;">IOC</span><span style="border:1px solid #15181D; color:#565C64; font-family:'IBM Plex Mono',monospace; font-size:11px; padding:8px 14px;">1H</span></div></div>
+            </div>
+            <!-- seal preview -->
+            <div style="flex:1; padding:28px; display:flex; flex-direction:column; background:#0A0C0F;">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; color:#8A9099; margin-bottom:20px;">SEAL PREVIEW</div>
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:22px;">
+                <svg width="16" height="16" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="#3BD7E0" stroke-width="8" stroke-linecap="round" stroke-dasharray="168 252" transform="rotate(-62 50 50)"></circle></svg>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#3BD7E0; letter-spacing:0.08em;">SEALED LOCALLY · NOT YET BROADCAST</span>
+              </div>
+              <div style="border:1px solid #15181D; padding:18px; margin-bottom:18px;">
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#565C64; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:10px;">Poseidon commitment</div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#3BD7E0; word-break:break-all; line-height:1.6;">0x9f3a8e21c40d77be5a1f0c2294ad6f88e1b7c204</div>
+              </div>
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64; line-height:1.7; margin-bottom:auto;">// price &amp; size never leave this device.<br>// the network only ever sees this hash.</div>
+              <div style="background:#3BD7E0; color:#07080A; font-family:'Archivo',sans-serif; font-weight:600; font-size:14px; padding:15px; text-align:center; letter-spacing:0.02em;">Seal &amp; broadcast →</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 04 · POOL ============ -->
+    <div style="flex:none; width:1200px;">
+      <div style="margin-bottom:16px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.16em; color:#1a1916; text-transform:uppercase;">04 · In the pool</div>
+        <div style="font-size:13px; color:#56524b; margin-top:4px;">The order rests among other commitments — visible to no one. Matching happens blind.</div>
+      </div>
+      <div data-screen-label="04 Pool" style="height:780px; background:#07080A; border-radius:2px; box-shadow:0 1px 3px rgba(0,0,0,.18); overflow:hidden; color:#ECEEF0; display:flex;">
+        <div style="width:208px; flex:none; border-right:1px solid #13171C; display:flex; flex-direction:column; background:#08090B;">
+          <div style="padding:22px; border-bottom:1px solid #13171C; display:flex; align-items:center; gap:10px;"><svg width="18" height="18" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="#23272E" stroke-width="7"></circle><circle cx="50" cy="50" r="40" fill="none" stroke="#3BD7E0" stroke-width="7" stroke-linecap="round" stroke-dasharray="168 252" transform="rotate(-62 50 50)"></circle></svg><span style="font-family:'Spectral',serif; font-size:17px;">Nyx</span></div>
+          <div style="padding:16px 0; flex:1;">
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64;">Desk</div>
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64;">Compose</div>
+            <div style="padding:11px 22px; border-left:2px solid #3BD7E0; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#ECEEF0;">Pool</div>
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64;">Proofs</div>
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64;">Settled</div>
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64;">Positions</div>
+          </div>
+          <div style="padding:18px 22px; border-top:1px solid #13171C;"><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#565C64; letter-spacing:0.08em;">MERIDIAN CAPITAL</div><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#3D434B; margin-top:5px;">Desk 04 · key 7af0</div></div>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; min-width:0;">
+          <div style="height:60px; flex:none; border-bottom:1px solid #13171C; display:flex; align-items:center; justify-content:space-between; padding:0 28px;"><div style="font-family:'Spectral',serif; font-size:20px; color:#ECEEF0;">Pool <span style="color:#3D434B; font-size:15px;">/ order #4471</span></div><div style="display:flex; align-items:center; gap:9px;"><svg width="13" height="13" viewBox="0 0 50 50" style="animation:nyxSpin 1.4s linear infinite;"><circle cx="25" cy="25" r="20" fill="none" stroke="#15181D" stroke-width="4"></circle><circle cx="25" cy="25" r="20" fill="none" stroke="#3BD7E0" stroke-width="4" stroke-linecap="round" stroke-dasharray="40 86"></circle></svg><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#3BD7E0; letter-spacing:0.1em;">SEARCHING FOR MATCH</span></div></div>
+          <div style="flex:1; display:flex; min-height:0;">
+            <!-- lattice -->
+            <div style="flex:1.4; padding:32px; border-right:1px solid #13171C; display:flex; flex-direction:column; min-width:0;">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; color:#8A9099; margin-bottom:8px;">SHIELDED POOL</div>
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#3D434B; margin-bottom:24px;">317 resting commitments · prices &amp; sizes hidden</div>
+              <div style="flex:1; display:grid; grid-template-columns:repeat(16,1fr); grid-auto-rows:1fr; gap:11px; align-content:start;">
+                <span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#3BD7E0;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#3BD7E0;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#3BD7E0;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span>
+                <span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#3BD7E0;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; border:1.5px solid #3BD7E0; background:#0A2E31; animation:nyxPulse 1.8s ease-in-out infinite;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#3BD7E0;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span>
+                <span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#3BD7E0;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#3BD7E0;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#3BD7E0;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span>
+                <span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#3BD7E0;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#3BD7E0;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#3BD7E0;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span>
+                <span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#3BD7E0;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#3BD7E0;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span><span style="aspect-ratio:1; background:#1A1E24;"></span>
+              </div>
+            </div>
+            <!-- order detail -->
+            <div style="flex:1; padding:28px; display:flex; flex-direction:column; gap:20px; min-width:0;">
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; color:#8A9099;">YOUR ORDER</div>
+              <div style="display:flex; flex-direction:column; gap:14px;">
+                <div style="display:flex; justify-content:space-between; align-items:baseline;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64;">Pair</span><span style="font-family:'Archivo',sans-serif; font-weight:600; font-size:14px; color:#ECEEF0;">TBILL-26 / USDC</span></div>
+                <div style="display:flex; justify-content:space-between; align-items:baseline;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64;">Side</span><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#43C08A;">BID</span></div>
+                <div style="display:flex; justify-content:space-between; align-items:baseline;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64;">Price / Size</span><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#3D434B;">•••• · sealed</span></div>
+                <div style="display:flex; justify-content:space-between; align-items:baseline;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64;">Resting</span><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#ECEEF0;">00:41</span></div>
+              </div>
+              <div style="border:1px solid #15181D; padding:16px;"><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#565C64; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:9px;">Commitment</div><div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#3BD7E0; word-break:break-all; line-height:1.5;">0x9f3a…c204</div></div>
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64; line-height:1.7; margin-top:auto;">// counterparties see only your hash.<br>// a match triggers proof generation.</div>
+              <div style="border:1px solid #23272E; color:#ECEEF0; font-family:'Archivo',sans-serif; font-weight:500; font-size:13px; padding:13px; text-align:center;">Cancel order</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 05 · PROVE & VERIFY ============ -->
+    <div style="flex:none; width:1200px;">
+      <div style="margin-bottom:16px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.16em; color:#1a1916; text-transform:uppercase;">05 · Match · prove · verify</div>
+        <div style="font-size:13px; color:#56524b; margin-top:4px;">A match is found; a ZK proof is generated and verified on-chain via BN254 — no side disclosed.</div>
+      </div>
+      <div data-screen-label="05 Prove" style="height:780px; background:#07080A; border-radius:2px; box-shadow:0 1px 3px rgba(0,0,0,.18); overflow:hidden; color:#ECEEF0; display:flex;">
+        <div style="width:208px; flex:none; border-right:1px solid #13171C; display:flex; flex-direction:column; background:#08090B;">
+          <div style="padding:22px; border-bottom:1px solid #13171C; display:flex; align-items:center; gap:10px;"><svg width="18" height="18" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="#23272E" stroke-width="7"></circle><circle cx="50" cy="50" r="40" fill="none" stroke="#3BD7E0" stroke-width="7" stroke-linecap="round" stroke-dasharray="168 252" transform="rotate(-62 50 50)"></circle></svg><span style="font-family:'Spectral',serif; font-size:17px;">Nyx</span></div>
+          <div style="padding:16px 0; flex:1;">
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64;">Desk</div>
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64;">Compose</div>
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64;">Pool</div>
+            <div style="padding:11px 22px; border-left:2px solid #3BD7E0; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#ECEEF0;">Proofs</div>
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64;">Settled</div>
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64;">Positions</div>
+          </div>
+          <div style="padding:18px 22px; border-top:1px solid #13171C;"><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#565C64; letter-spacing:0.08em;">MERIDIAN CAPITAL</div><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#3D434B; margin-top:5px;">Desk 04 · key 7af0</div></div>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; min-width:0;">
+          <div style="height:60px; flex:none; border-bottom:1px solid #13171C; display:flex; align-items:center; padding:0 28px;"><div style="font-family:'Spectral',serif; font-size:20px; color:#ECEEF0;">Match <span style="color:#3D434B; font-size:15px;">/ order #4471 × #4392</span></div></div>
+          <div style="flex:1; padding:28px; display:flex; gap:24px; min-height:0;">
+            <!-- pipeline -->
+            <div style="flex:1.3; border:1px solid #13171C; display:flex; flex-direction:column; min-width:0;">
+              <div style="padding:16px 22px; border-bottom:1px solid #13171C; display:flex; align-items:center; gap:9px;"><span style="width:7px; height:7px; border-radius:50%; background:#43C08A;"></span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#43C08A;">MATCH FOUND</span></div>
+              <div style="padding:8px 0; flex:1;">
+                <div style="display:flex; align-items:center; gap:16px; padding:18px 22px;"><svg width="18" height="18" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#0F2A1F"></circle><circle cx="50" cy="50" r="40" fill="none" stroke="#43C08A" stroke-width="5"></circle></svg><div style="flex:1;"><div style="font-family:'Spectral',serif; font-size:17px; color:#ECEEF0;">Match located</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64; margin-top:3px;">maker #4392 ∩ taker #4471</div></div><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#43C08A;">DONE</span></div>
+                <div style="display:flex; align-items:center; gap:16px; padding:18px 22px; border-top:1px solid #0E1115;"><svg width="18" height="18" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#0F2A1F"></circle><circle cx="50" cy="50" r="40" fill="none" stroke="#43C08A" stroke-width="5"></circle></svg><div style="flex:1;"><div style="font-family:'Spectral',serif; font-size:17px; color:#ECEEF0;">ZK proof generated</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64; margin-top:3px;">intersection at valid px &amp; volume</div></div><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#43C08A;">DONE</span></div>
+                <div style="display:flex; align-items:center; gap:16px; padding:18px 22px; border-top:1px solid #0E1115; background:#0A0C0F;"><svg width="18" height="18" viewBox="0 0 50 50" style="animation:nyxSpin 1.4s linear infinite;"><circle cx="25" cy="25" r="20" fill="none" stroke="#15181D" stroke-width="5"></circle><circle cx="25" cy="25" r="20" fill="none" stroke="#3BD7E0" stroke-width="5" stroke-linecap="round" stroke-dasharray="40 86"></circle></svg><div style="flex:1;"><div style="font-family:'Spectral',serif; font-size:17px; color:#ECEEF0;">Verifying on-chain</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#3BD7E0; margin-top:3px;">Soroban · BN254 host fn</div></div><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#3BD7E0;">ACTIVE</span></div>
+                <div style="display:flex; align-items:center; gap:16px; padding:18px 22px; border-top:1px solid #0E1115; opacity:0.5;"><svg width="18" height="18" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="#23272E" stroke-width="5"></circle></svg><div style="flex:1;"><div style="font-family:'Spectral',serif; font-size:17px; color:#ECEEF0;">Atomic settlement</div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64; margin-top:3px;">RWA ⇄ USDC</div></div><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#565C64;">PENDING</span></div>
+              </div>
+            </div>
+            <!-- artifact / on-chain -->
+            <div style="flex:1; display:flex; flex-direction:column; gap:20px; min-width:0;">
+              <div style="border:1px solid #13171C; padding:20px;">
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#8A9099; margin-bottom:16px;">PROOF ARTIFACT</div>
+                <div style="display:flex; flex-direction:column; gap:13px;">
+                  <div style="display:flex; justify-content:space-between;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64;">System</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#ECEEF0;">Groth16 · BN254</span></div>
+                  <div style="display:flex; justify-content:space-between;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64;">Public inputs</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#ECEEF0;">2 commitments</span></div>
+                  <div style="display:flex; justify-content:space-between;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64;">Proof</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#3BD7E0;">0x7e1c…b9a4</span></div>
+                </div>
+              </div>
+              <div style="border:1px solid #13171C; padding:20px; flex:1;">
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#8A9099; margin-bottom:16px;">ON-CHAIN</div>
+                <div style="display:flex; flex-direction:column; gap:13px;">
+                  <div style="display:flex; justify-content:space-between;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64;">Contract</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#ECEEF0;">CNYX…verify</span></div>
+                  <div style="display:flex; justify-content:space-between;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64;">Ledger</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#ECEEF0;">58,204,117</span></div>
+                  <div style="display:flex; justify-content:space-between;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64;">Host fn</span><span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#ECEEF0;">bn254_pairing</span></div>
+                </div>
+                <div style="margin-top:20px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64; line-height:1.7;">// neither desk learns the other's<br>// price or size — only that it cleared.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 06 · SETTLED ============ -->
+    <div style="flex:none; width:1200px;">
+      <div style="margin-bottom:16px;">
+        <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.16em; color:#1a1916; text-transform:uppercase;">06 · Settled</div>
+        <div style="font-size:13px; color:#56524b; margin-top:4px;">Atomic settlement clears. The fill is revealed to the two desks only — and proven to the chain.</div>
+      </div>
+      <div data-screen-label="06 Settled" style="height:780px; background:#07080A; border-radius:2px; box-shadow:0 1px 3px rgba(0,0,0,.18); overflow:hidden; color:#ECEEF0; display:flex;">
+        <div style="width:208px; flex:none; border-right:1px solid #13171C; display:flex; flex-direction:column; background:#08090B;">
+          <div style="padding:22px; border-bottom:1px solid #13171C; display:flex; align-items:center; gap:10px;"><svg width="18" height="18" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="#23272E" stroke-width="7"></circle><circle cx="50" cy="50" r="40" fill="none" stroke="#3BD7E0" stroke-width="7" stroke-linecap="round" stroke-dasharray="168 252" transform="rotate(-62 50 50)"></circle></svg><span style="font-family:'Spectral',serif; font-size:17px;">Nyx</span></div>
+          <div style="padding:16px 0; flex:1;">
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64;">Desk</div>
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64;">Compose</div>
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64;">Pool</div>
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64;">Proofs</div>
+            <div style="padding:11px 22px; border-left:2px solid #3BD7E0; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#ECEEF0;">Settled</div>
+            <div style="padding:11px 22px; border-left:2px solid transparent; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#565C64;">Positions</div>
+          </div>
+          <div style="padding:18px 22px; border-top:1px solid #13171C;"><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#565C64; letter-spacing:0.08em;">MERIDIAN CAPITAL</div><div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#3D434B; margin-top:5px;">Desk 04 · key 7af0</div></div>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; min-width:0; position:relative;">
+          <svg width="460" height="460" viewBox="0 0 100 100" style="position:absolute; right:-150px; top:40px; opacity:0.35;"><circle cx="50" cy="50" r="44" fill="none" stroke="#13171C" stroke-width="0.8"></circle><circle cx="50" cy="50" r="44" fill="none" stroke="#3BD7E0" stroke-width="0.8" stroke-linecap="round" stroke-dasharray="150 277" transform="rotate(-72 50 50)"></circle></svg>
+          <div style="height:60px; flex:none; border-bottom:1px solid #13171C; display:flex; align-items:center; padding:0 28px;"><div style="font-family:'Spectral',serif; font-size:20px; color:#ECEEF0;">Settlement <span style="color:#3D434B; font-size:15px;">/ #4471</span></div></div>
+          <div style="flex:1; padding:40px 28px; position:relative; display:flex; gap:32px;">
+            <!-- receipt -->
+            <div style="flex:1.1; max-width:520px;">
+              <div style="display:flex; align-items:center; gap:14px; margin-bottom:30px;">
+                <svg width="34" height="34" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#0A2E31"></circle><circle cx="50" cy="50" r="40" fill="none" stroke="#3BD7E0" stroke-width="5" stroke-linecap="round" stroke-dasharray="168 252" transform="rotate(-62 50 50)"></circle></svg>
+                <div><div style="font-family:'Spectral',serif; font-size:32px; color:#ECEEF0; line-height:1;">Settled <span style="font-style:italic; color:#3BD7E0;">atomically.</span></div><div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64; margin-top:8px; letter-spacing:0.08em;">14:22:11 UTC · ledger 58,204,118</div></div>
+              </div>
+              <div style="border:1px solid #13171C;">
+                <div style="display:flex; justify-content:space-between; padding:18px 22px; border-bottom:1px solid #13171C;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64; letter-spacing:0.08em;">YOU RECEIVED</span><span style="font-family:'IBM Plex Mono',monospace; font-size:15px; color:#43C08A;">5,000,000 TBILL-26</span></div>
+                <div style="display:flex; justify-content:space-between; padding:18px 22px; border-bottom:1px solid #13171C;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64; letter-spacing:0.08em;">YOU SENT</span><span style="font-family:'IBM Plex Mono',monospace; font-size:15px; color:#E05A6E;">4,992,000 USDC</span></div>
+                <div style="display:flex; justify-content:space-between; padding:18px 22px; border-bottom:1px solid #13171C;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64; letter-spacing:0.08em;">FILL PRICE</span><span style="font-family:'IBM Plex Mono',monospace; font-size:15px; color:#ECEEF0;">99.84</span></div>
+                <div style="display:flex; justify-content:space-between; padding:18px 22px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64; letter-spacing:0.08em;">COUNTERPARTY</span><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#3D434B;">undisclosed · #4392</span></div>
+              </div>
+              <div style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:#565C64; line-height:1.7; margin-top:18px;">// the fill is visible to the two desks.<br>// the market saw only a verified proof.</div>
+            </div>
+            <!-- proof / explorer -->
+            <div style="flex:1; display:flex; flex-direction:column; gap:18px; position:relative; max-width:380px;">
+              <div style="border:1px solid #13171C; padding:20px;">
+                <div style="display:flex; align-items:center; gap:9px; margin-bottom:16px;"><span style="width:6px; height:6px; border-radius:50%; background:#3BD7E0;"></span><span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.12em; color:#3BD7E0;">PROOF VERIFIED</span></div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#565C64; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:9px;">Settlement tx</div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color:#ECEEF0; word-break:break-all; line-height:1.6;">0x5a27be83…07fa1c39</div>
+                <div style="margin-top:18px; border:1px solid #23272E; padding:11px; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:11px; color:#ECEEF0; letter-spacing:0.06em;">View on Stellar Explorer →</div>
+              </div>
+              <div style="border:1px solid #13171C; padding:20px;">
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#565C64; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:12px;">Disclosed to market</div>
+                <div style="font-family:'Spectral',serif; font-size:30px; color:#3BD7E0;">0 bytes</div>
+              </div>
+              <div style="background:#3BD7E0; color:#07080A; font-family:'Archivo',sans-serif; font-weight:600; font-size:14px; padding:15px; text-align:center; letter-spacing:0.02em;">Download receipt</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
