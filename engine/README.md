@@ -13,17 +13,20 @@ engine/
 │   ├── config/          # env-driven, validated configuration (12-factor, fail-fast)
 │   ├── db/              # pgxpool wrapper + SERIALIZABLE transaction helper
 │   ├── api/             # HTTP surface (Phase 2: /healthz with live DB ping)
-│   └── matcher/         # order-pairing worker loop (Phase 2: lifecycle stub)
+│   ├── matcher/         # order-pairing worker loop (Phase 2: lifecycle stub)
+│   ├── onchain/         # Phase 4: env-gated Soroban bridge (invoke verify_and_settle)
+│   └── e2e/             # integration-gated off-chain + on-chain E2E pipeline
 └── db/migrations/       # golang-migrate SQL migrations (up/down pairs)
 ```
 
-## Data model (migration `000001_init_schema`)
+## Data model (migrations `000001_init_schema`, `000002_order_commitment`)
 
 - **`orders`** — the encrypted order book. Stores only the client `encrypted_blob` plus
-  Poseidon commitments (`price_hash`, `volume_hash`) — never plaintext price/volume. A
-  unique `nullifier` prevents an order from being matched twice. A partial index
-  `idx_orders_open_book (asset_pair, side, created_at) WHERE status='open'` serves the
-  matcher's hot path (FIFO / price-time priority per pair).
+  Poseidon commitments (`price_hash`, `volume_hash`, and `order_commitment` =
+  `Poseidon(price,volume,salt)` — the proof's public input, added in `000002`) — never
+  plaintext price/volume. A unique `nullifier` prevents an order from being matched twice. A
+  partial index `idx_orders_open_book (asset_pair, side, created_at) WHERE status='open'`
+  serves the matcher's hot path (FIFO / price-time priority per pair).
 - **`matches`** — settlement records pairing a maker and taker order, holding the
   serialized Groth16 `proof_blob` and `onchain_status`. Unique maker/taker constraints
   enforce the full-fill model; a `CHECK` forbids self-matching.
@@ -88,6 +91,24 @@ go test -race ./...                                   # unit
 NYX_TEST_DB_URL="postgres://nyx:nyx@localhost:5432/nyx?sslmode=disable" \
   go test -race -tags=integration -p 1 ./...          # + integration/e2e
 ```
+
+## On-chain settlement bridge (`internal/onchain`, Phase 4)
+
+After a match is verified off-chain, the engine can re-verify it on-chain by invoking the
+deployed Soroban `nyx-verifier` contract's `verify_and_settle` (via the `stellar` CLI). The
+bridge is **disabled unless `NYX_SOROBAN_CONTRACT_ID` is set**, so offline `go test ./...`
+needs no network or contract.
+
+| Variable                  | Default                 | Purpose                                   |
+|---------------------------|-------------------------|-------------------------------------------|
+| `NYX_SOROBAN_CONTRACT_ID` | _(unset → disabled)_    | deployed contract id (CID); enables the bridge |
+| `NYX_SOROBAN_NETWORK`     | `local`                 | `--network` passed to the CLI             |
+| `NYX_SOROBAN_SOURCE`      | `nyx-engine`            | signing identity (also the `submitter`)   |
+| `NYX_STELLAR_BIN`         | `stellar`               | path to the `stellar` binary              |
+
+On success the engine records `matches.onchain_status = 'confirmed'` and the
+`settlement_tx`. The on-chain run requires a Soroban network at **protocol ≥ 26**. See
+[`../scripts/e2e_onchain.sh`](../scripts/e2e_onchain.sh) for the full flow.
 
 ## Transaction discipline
 

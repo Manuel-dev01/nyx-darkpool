@@ -9,8 +9,9 @@ that a maker and taker order legitimately intersect at a valid price and volume;
 Soroban contract verifies that proof on-chain (using Stellar Protocol 26's native BN254
 host functions) before settling the asset swap atomically.
 
-> Status: **Phase 1 — Workspace & State Initialization.** See [`STATUS.md`](./STATUS.md)
-> for the live build ledger.
+> Status: **Phases 1–4 DONE** (workspace, Postgres engine, ZK circuit, on-chain Soroban
+> verifier — the real Phase-3 proof verifies live on-chain). **Phase 5 (concurrent matcher)
+> is next.** See [`STATUS.md`](./STATUS.md) for the live build ledger.
 
 ---
 
@@ -66,7 +67,10 @@ a succinct, verifiable proof of a fair match ever touches the chain.
 - **On-chain verification:** Stellar **Protocol 26** BN254 host functions — pairing check,
   multi-scalar multiplication, and scalar-field arithmetic — invoked from Soroban.
 - **Safety:** every intermediate circuit signal is strictly constrained (no
-  under-constrained signals); nullifiers prevent replay/double-spend of orders.
+  under-constrained signals; comparator operands are range-checked to defeat field
+  wraparound). Double-match/replay is prevented by the DB (`orders.nullifier UNIQUE`,
+  `matches` UNIQUE maker/taker) and on-chain (the verifier records settled commitments and
+  rejects replays). An in-circuit nullifier is a documented future extension.
 
 ---
 
@@ -96,26 +100,40 @@ nyx-darkpool/
 | Node.js     | ≥ 18       | `circuits/` (snarkjs)  | https://nodejs.org/                                       |
 | circom      | 2.x        | `circuits/`            | https://docs.circom.io/getting-started/installation/      |
 | snarkjs     | latest     | `circuits/`            | `npm install -g snarkjs` (or local in `circuits/`)        |
-| Stellar CLI | latest     | `contracts/`           | https://developers.stellar.org/docs/tools/cli             |
-| Rust        | stable     | `contracts/`           | + target `wasm32-unknown-unknown`                         |
+| Stellar CLI | 27.x       | `contracts/`           | https://developers.stellar.org/docs/tools/cli             |
+| Rust        | stable     | `contracts/`           | + target `wasm32v1-none` (used by `stellar contract build`) |
 
-> Current environment: Go 1.25.5, Node 24.12, Docker 29.5 present. `circom`, `snarkjs`,
-> and the `stellar` CLI are **not yet installed** and will be provisioned at Phases 3–4.
+> Current environment (all provisioned): Go 1.25.5, Node 24.12, Docker 29.5, circom 2.2.3,
+> snarkjs (in `circuits/`), Rust 1.96.0 + `wasm32v1-none`, `stellar` CLI 27.0.0. See
+> [`STATUS.md`](./STATUS.md) → *Toolchain Inventory* for exact locations and the offline
+> Rust-install note. The Soroban network for live runs must be **protocol ≥ 26**.
 
 ---
 
 ## Quickstart
 
-> The Makefile and `docker-compose.yml` referenced below are introduced in **Phase 6**.
-> Until then, each component is built from its own directory (see per-phase steps in
-> [`CLAUDE.md`](./CLAUDE.md)).
+The top-level `Makefile` / `docker-compose.yml` arrive in **Phase 6**. Until then, each
+component runs from its own directory (full toolchain notes in [`STATUS.md`](./STATUS.md)):
 
 ```bash
-make up          # start PostgreSQL + the Go engine
-make down        # tear down the stack
-make circuits    # compile circuits + run trusted setup
-make contracts   # build & test the Soroban verifier
-make test-all    # run the full test suite across components
+# Circuits — compile + trusted setup + sample proof + verify
+bash scripts/install_circom.sh      # one-time: prebuilt circom into scripts/bin/
+( cd circuits && npm install )
+bash scripts/compile_circuit.sh
+
+# Engine — unit tests (offline) and integration/E2E (needs Postgres)
+( cd engine && go test ./... )
+docker run -d --name nyx-pg -e POSTGRES_USER=nyx -e POSTGRES_PASSWORD=nyx \
+  -e POSTGRES_DB=nyx -p 5433:5432 postgres:16
+export NYX_TEST_DB_URL="postgres://nyx:nyx@localhost:5433/nyx?sslmode=disable"
+( cd engine && go test -tags=integration -p 1 ./... )
+bash scripts/e2e_offchain.sh        # off-chain proof pipeline
+
+# Contracts — build, test, deploy, and full on-chain E2E
+export PATH="$HOME/.cargo/bin:/c/mingw64/bin:$PATH"
+( cd contracts/nyx-verifier && cargo test && stellar contract build )
+stellar container start local --protocol-version 26   # network MUST be protocol >= 26
+bash scripts/e2e_onchain.sh         # engine -> deployed contract, verify_and_settle on-chain
 ```
 
 ---
@@ -126,11 +144,11 @@ Nyx is built in six sequential, independently-committed phases. No phase begins 
 previous one compiles, passes its tests, and is committed. The authoritative protocol lives
 in [`CLAUDE.md`](./CLAUDE.md); live progress is tracked in [`STATUS.md`](./STATUS.md).
 
-1. **Workspace & State Initialization** — repo, topology, docs _(current)_
-2. **Database Schema & Engine Boilerplate** — Postgres migrations + Go scaffold
-3. **ZK Circuit Construction** — `darkpool_match.circom` + trusted setup
-4. **Soroban Verifier Contract** — on-chain Groth16 verification + settlement
-5. **Off-Chain Engine Logic** — concurrent matcher + proof routing
+1. **Workspace & State Initialization** — repo, topology, docs ✅
+2. **Database Schema & Engine Boilerplate** — Postgres migrations + Go scaffold ✅
+3. **ZK Circuit Construction** — `darkpool_match.circom` + trusted setup ✅ _(+ Go test/E2E hardening)_
+4. **Soroban Verifier Contract** — on-chain Groth16 verification + settlement ✅ _(verified live on-chain)_
+5. **Off-Chain Engine Logic** — concurrent matcher + proof routing _(next)_
 6. **Orchestration & Dockerization** — compose + Makefile
 
 ---
