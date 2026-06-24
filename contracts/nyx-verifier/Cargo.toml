@@ -1,0 +1,29 @@
+[package]
+name = "nyx-verifier"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Nyx darkpool on-chain Groth16 BN254 verifier + settlement seam (Soroban)"
+
+[lib]
+# cdylib produces the deployable Soroban wasm; `cargo test` builds its own
+# native test harness from it. (The dependency + testutils dev-dependency must
+# pin the SAME soroban-sdk version, else two versions land in the graph and
+# rustc errors E0464 "multiple candidates for rlib soroban_sdk".)
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = "26.1.0"
+
+[dev-dependencies]
+soroban-sdk = { version = "26.1.0", features = ["testutils"] }
+
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+debug = 0
+strip = "symbols"
+debug-assertions = false
+panic = "abort"
+codegen-units = 1
+lto = true
