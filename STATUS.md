@@ -5,7 +5,7 @@
 > starting a phase and to `DONE` (with the commit short-hash) after a phase compiles,
 > passes validation, and is committed.
 
-_Last updated: 2026-06-21 (Phase 3 complete + hardening/E2E retrofit)_
+_Last updated: 2026-06-23 (Phase 4 — Soroban BN254 verifier verified)_
 
 ## Phase Ledger
 
@@ -14,7 +14,7 @@ _Last updated: 2026-06-21 (Phase 3 complete + hardening/E2E retrofit)_
 | 1     | Workspace & State Initialization              | DONE        | 2721f31 |
 | 2     | Database Schema & Engine Boilerplate (Go/PG)  | DONE        | 26ca3ed |
 | 3     | ZK Circuit Construction (Circom + snarkjs)    | DONE        | 70bdafd |
-| 4     | Soroban Verifier Contract (Rust)              | PENDING     | —       |
+| 4     | Soroban Verifier Contract (Rust)              | DONE        | cf9b035 |
 | 5     | Off-Chain Engine Logic (Go matcher + proofs)  | PENDING     | —       |
 | 6     | Orchestration & Dockerization                 | PENDING     | —       |
 
@@ -25,7 +25,8 @@ _Last updated: 2026-06-21 (Phase 3 complete + hardening/E2E retrofit)_
 ## Repository State
 
 - **Branch:** `main` · **Remote:** `origin` (github.com/Manuel-dev01/nyx-darkpool)
-- **Local `HEAD` == `origin/main` == `059ccac`** — fully in sync (verified 2026-06-21).
+- **Local is ahead of `origin/main`** by the Phase 3 + Phase 4 commits — the user pushes when
+  ready (last verified-synced point was `059ccac` on 2026-06-21).
 - **Commit policy:** commit locally only; the user performs all pushes. Commits carry
   **no `Co-Authored-By` trailer** (the author is the user).
 - **History note:** the first two commits were rewritten once to remove a
@@ -56,7 +57,10 @@ _Last updated: 2026-06-21 (Phase 3 complete + hardening/E2E retrofit)_
 | circom      | ✅ v2.2.3   | Phase 3    | Prebuilt binary via `scripts/install_circom.sh` → `scripts/bin/` (no Rust) |
 | snarkjs     | ✅ installed | Phase 3   | `circuits/node_modules` (pinned in package.json), run via `npx`   |
 | circomlib / circomlibjs | ✅ pinned | Phase 3 | 2.0.5 / 0.1.7 — matched Poseidon constants in-circuit ↔ off-chain |
-| stellar CLI | ❌ missing   | Phase 4    | + Rust `wasm32-unknown-unknown` target           |
+| Rust (rustc/cargo) | ✅ 1.96.0 | Phase 4 | GNU host, offline-installed at `C:\rust-gnu`, linked into rustup as `nyx-gnu` (see note) |
+| wasm targets | ✅ installed | Phase 4 | `wasm32v1-none` (used by `stellar contract build`) + `wasm32-unknown-unknown`, merged into `C:\rust-gnu` |
+| stellar CLI | ✅ v27.0.0  | Phase 4    | prebuilt binary at `scripts/bin/stellar.exe`     |
+| soroban-sdk | ✅ 26.1.0    | Phase 4    | `bn254` module (G1/G2/Fr, pairing_check, g1_msm) — not feature-gated |
 | golang-migrate (CLI) | ✅ installed | Phase 2 | `go install ...migrate/v4/cmd/migrate@latest` (postgres tag) |
 | gcc / MinGW (for `-race`) | ✅ 16.1.0 | Phase 3+ | WinLibs UCRT at `C:\mingw64` (space-free path required by ld). Enables `go test -race` (cgo). |
 | postgres (Docker img) | ✅ present | Phases 2,6 | `postgres:latest` cached; compose pins `postgres:16` |
@@ -130,9 +134,47 @@ space-free path is required — `ld` cannot link from a path containing spaces).
 
 See `engine/README.md` → "Running tests with the race detector" for the exact commands.
 
-## On-chain E2E (deferred to Phase 4)
-The current E2E verifies the proof **off-chain** (snarkjs). A `PHASE-4 HOOK` marker in
-`engine/internal/e2e/e2e_integration_test.go` and `scripts/e2e_offchain.sh` flags the single
-seam where the Soroban `verify_and_settle` call replaces/augments the off-chain verify. The
-`matches` schema (`proof_blob`, `onchain_status`, `settlement_tx`) already models on-chain
-settlement, so Phase 4 needs no migration to wire it.
+## On-chain E2E seam
+The off-chain E2E verifies the proof with snarkjs; the `PHASE-4 HOOK` in
+`engine/internal/e2e/e2e_integration_test.go` is now wired to the deployed Soroban contract
+(gated by `NYX_SOROBAN_CONTRACT_ID`). The `matches` schema (`proof_blob`, `onchain_status`,
+`settlement_tx`) modeled on-chain settlement from Phase 2, so no migration was needed.
+
+## Phase 4 Checklist (commits 8744e6a → 74b1a86)
+
+- [x] **A** `8744e6a` `feat(scripts)` — `proof_to_bytes.js` + BN254 `.bin` fixtures
+- [x] **B** `cf9b035` `feat(contracts)` — BN254 Groth16 verifier + settlement seam
+- [x] **C** `539c79b` `feat(engine)` — env-gated Soroban on-chain bridge (`internal/onchain`)
+- [x] **D** `74b1a86` `feat(engine)` — wire e2e PHASE-4 hook + deploy/e2e-onchain scripts
+- [x] **E** `docs(status)` — this update
+- [~] Live deploy to a local Soroban network + on-chain e2e run — infrastructure complete and
+  committed (`scripts/deploy_contract.sh`, `scripts/e2e_onchain.sh`); the live RUN is pending a
+  slow `stellar/quickstart` Docker image pull (network-bound). Runnable once pulled:
+  `NYX_TEST_DB_URL=... bash scripts/e2e_onchain.sh`.
+
+### Verification evidence (Phase 4)
+- **Contract `cargo test`: 6/6 pass**, incl. `valid_proof_verifies` — the **REAL Phase-3 proof
+  verifies natively on-chain** via soroban-sdk 26.1.0 BN254 `pairing_check` (proves the byte
+  encoding + verifier math). Tamper (proof + public input), replay (`AlreadySettled`),
+  wrong-input-count, and missing-auth are all rejected.
+- **`stellar contract build` → 6408-byte optimized wasm** (`wasm32v1-none`).
+- **G2 byte-ordering footgun resolved up front** by reading the SDK source: soroban-sdk 26.1.0
+  documents G1 = `be(X)||be(Y)`, G2 Fp2 = `be(c1)||be(c0)` — matching `proof_to_bytes.js`
+  defaults (`G2_ORDERING=c1c0`, `FE_ENDIAN=big`), so the real proof verified first try.
+- **Offline `go test ./...` stays green** — the on-chain bridge is disabled unless
+  `NYX_SOROBAN_CONTRACT_ID` is set; `internal/onchain` has offline unit tests.
+
+### Toolchain install note (Phase 4)
+`rustup`'s downloader repeatedly stalled/hung on this network (the 101 MB `rustc` component;
+also Windows rename `os error 145`). Worked around by downloading the rust component tarballs
+directly with resumable `curl -C -`, doing an **offline install** into `C:\rust-gnu`, and
+linking it into rustup (`rustup toolchain link nyx-gnu C:\rust-gnu`; `rustup default nyx-gnu`).
+`stellar contract build` targets **`wasm32v1-none`** (not `wasm32-unknown-unknown`) — its std
+was likewise merged in. To rebuild: `PATH=$HOME/.cargo/bin:/c/mingw64/bin:...` then
+`cargo test` / `stellar contract build` from `contracts/nyx-verifier`.
+
+### Signature deviation (documented)
+`verify_and_settle` adds a leading `submitter: Address` vs CLAUDE.md's signature, because
+`require_auth` needs a principal. Proof argument types (`BytesN<64>/<128>/<32>`,
+`Vec<BytesN<32>>`) are exactly as specified. Auth gates the settlement state write; the
+Groth16 pairing check is the cryptographic gate.
