@@ -33,6 +33,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/nyx-darkpool/engine/internal/db"
+	"github.com/nyx-darkpool/engine/internal/onchain"
 )
 
 // sampleInput mirrors the JSON emitted by circuits/scripts/gen_input.js.
@@ -216,8 +217,7 @@ func TestOffchainProofPipeline(t *testing.T) {
 		t.Fatalf("store proof_blob: %v", err)
 	}
 
-	// 6. Off-chain verify — the cryptographic gate. (PHASE-4 HOOK: replace/extend
-	//    with Soroban verify_and_settle once the contract exists.)
+	// 6. Off-chain verify — the always-on cryptographic gate.
 	if out, err := node(t, circuits, cli, "groth16", "verify", vkey, public, proof); err != nil {
 		t.Fatalf("groth16 verify FAILED: %v\n%s", err, out)
 	}
@@ -270,7 +270,77 @@ func TestOffchainProofPipeline(t *testing.T) {
 		t.Fatalf("expected unique_violation (23505), got: %v", dupErr)
 	}
 
-	t.Log("PHASE-4 HOOK: off-chain proof verified; on-chain Soroban verify_and_settle goes here")
+	// 10. PHASE-4: on-chain Soroban verify_and_settle, gated on NYX_SOROBAN_CONTRACT_ID.
+	//     Off-chain gate above always runs; this extends it to the deployed contract.
+	oc := onchain.FromEnv()
+	if !oc.Enabled {
+		t.Log("PHASE-4: NYX_SOROBAN_CONTRACT_ID unset — skipping on-chain verify (off-chain gate passed)")
+		return
+	}
+
+	if _, err := d.Pool.Exec(ctx, `UPDATE matches SET onchain_status='submitted' WHERE id=$1`, matchID); err != nil {
+		t.Fatalf("set submitted: %v", err)
+	}
+
+	submitter := stellarAddress(t, oc, oc.Source)
+	hexProof := proofToHex(t, root, proof, public)
+
+	txHash, err := oc.VerifyAndSettle(ctx, submitter, hexProof)
+	if err != nil {
+		_, _ = d.Pool.Exec(ctx, `UPDATE matches SET onchain_status='failed' WHERE id=$1`, matchID)
+		t.Fatalf("on-chain verify_and_settle failed: %v", err)
+	}
+
+	// Truncate to the settlement_tx column width (VARCHAR(64)); store NULL if empty.
+	if len(txHash) > 64 {
+		txHash = txHash[:64]
+	}
+	if _, err := d.Pool.Exec(ctx,
+		`UPDATE matches SET onchain_status='confirmed', settlement_tx=NULLIF($1,'') WHERE id=$2`,
+		txHash, matchID); err != nil {
+		t.Fatalf("update onchain_status: %v", err)
+	}
+
+	var st string
+	if err := d.Pool.QueryRow(ctx, `SELECT onchain_status FROM matches WHERE id=$1`, matchID).Scan(&st); err != nil {
+		t.Fatal(err)
+	}
+	if st != "confirmed" {
+		t.Fatalf("onchain_status = %q, want confirmed", st)
+	}
+	t.Logf("PHASE-4: on-chain verify_and_settle confirmed (tx=%q)", txHash)
+}
+
+// proofToHex runs scripts/proof_to_bytes.js in hex mode to convert the proof +
+// public inputs to the 0x-hex form the contract expects (single source of truth
+// for the byte encoding).
+func proofToHex(t *testing.T, root, proofPath, publicPath string) onchain.Proof {
+	t.Helper()
+	script := filepath.Join(root, "scripts", "proof_to_bytes.js")
+	out, err := exec.Command("node", script, "hex", proofPath, publicPath).CombinedOutput()
+	if err != nil {
+		t.Fatalf("proof_to_bytes hex: %v\n%s", err, out)
+	}
+	var j struct {
+		ProofA string   `json:"proof_a"`
+		ProofB string   `json:"proof_b"`
+		ProofC string   `json:"proof_c"`
+		Public []string `json:"public"`
+	}
+	if err := json.Unmarshal(out, &j); err != nil {
+		t.Fatalf("parse proof_to_bytes hex output: %v\n%s", err, out)
+	}
+	return onchain.Proof{A: j.ProofA, B: j.ProofB, C: j.ProofC, Public: j.Public}
+}
+
+// stellarAddress resolves a key identity name to its G... address via the CLI.
+func stellarAddress(t *testing.T, oc onchain.Config, name string) string {
+	t.Helper()
+	out, err := exec.Command(oc.Bin, "keys", "address", name).CombinedOutput()
+	if err != nil {
+		t.Fatalf("resolve stellar address for %q: %v\n%s", name, err, out)
+	}
+	return strings.TrimSpace(string(out))
 }
 
 // TestNegativeCrossRejected proves the circuit enforces the price cross: a pair
