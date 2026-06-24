@@ -1,0 +1,71 @@
+/* ============================================================================
+   Nyx Darkpool — global styles
+   ----------------------------------------------------------------------------
+   Brand tokens (canonical reference, extracted from the Nyx Brand Board), the
+   reset, ::selection, and the motion keyframes shared by the design surfaces.
+   The page bodies keep their original inline styles for pixel fidelity; this
+   file carries only what every route shares.
+   ========================================================================== */
+
+:root {
+  /* ---- Type ------------------------------------------------------------- */
+  --nyx-font-display: 'Spectral', serif;          /* headlines, statements, wordmark */
+  --nyx-font-body:    'Archivo', sans-serif;      /* interface, paragraphs, nav      */
+  --nyx-font-mono:    'IBM Plex Mono', monospace; /* hashes, proofs, labels, prices  */
+
+  /* ---- Neutral scale (dark-first, cool near-black) ---------------------- */
+  --nyx-void:      #07080A; /* primary background */
+  --nyx-obsidian:  #0D0F12;
+  --nyx-slate:     #15181D;
+  --nyx-graphite:  #23272E;
+  --nyx-ash:       #565C64;
+  --nyx-smoke:     #8A9099;
+  --nyx-moon:      #ECEEF0; /* primary text */
+
+  --nyx-border:       #16191D;
+  --nyx-border-cool:  #13171C;
+  --nyx-text-muted:   #9aa0a8;
+  --nyx-text-faint:   #3D434B;
+
+  /* ---- Accent — "Lumen" (marks what is proven; <= 10% of a surface) ----- */
+  --nyx-lumen:      #3BD7E0;
+  --nyx-lumen-deep: #0E7E86;
+  --nyx-lumen-veil: #0A2E31;
+
+  /* ---- Functional (product surfaces only) ------------------------------ */
+  --nyx-bid: #43C08A;
+  --nyx-ask: #E05A6E;
+
+  --nyx-selection-bg: rgba(59, 215, 224, 0.22);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--nyx-void);
+  color: var(--nyx-moon);
+}
+
+::selection {
+  background: var(--nyx-selection-bg);
+  color: var(--nyx-moon);
+}
+
+/* ---- Motion: every keyframe used across the Nyx design surfaces ----------- */
+
+/* blinking terminal caret (Directions · Blotter) */
+@keyframes nyxBlink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+/* slow vertical drift for the hero eclipse (Landing) */
+@keyframes nyxFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(10px); } }
+
+/* marching-ants connector line (Schematic settlement path) */
+@keyframes nyxDash { to { stroke-dashoffset: -64; } }
+
+/* live-status pulse (LIVE dot, pool match cell) */
+@keyframes nyxPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* indeterminate verify spinner (App · Pool / Prove) */
+@keyframes nyxSpin { to { transform: rotate(360deg); } }

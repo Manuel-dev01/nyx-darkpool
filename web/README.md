@@ -1,75 +1,100 @@
-# web — Nyx brand & product design
+# web — Nyx brand & product (Next.js)
 
-The Nyx visual identity and product surfaces, implemented as **zero-dependency static
-HTML/CSS** from the Claude Design canvases. Open any page directly in a browser (no build,
-no server) — start with [`index.html`](./index.html), a hub linking the four deliverables.
+The Nyx visual identity and product surfaces as a **Next.js (App Router, TypeScript)**
+application. Each Claude Design canvas is implemented as a route; the markup is rendered
+**verbatim** from the approved design so the pages stay pixel-identical to the source.
+
+## Run it
+
+```bash
+cd web
+npm install
+npm run dev      # http://localhost:3000
+# or
+npm run build && npm start
+```
+
+All routes are statically prerendered (`next build` → `○ (Static)`), so the app can also be
+deployed to any static/edge host (e.g. Vercel) with no server runtime.
+
+## Routes
+
+| Route | Surface | Source canvas |
+|-------|---------|---------------|
+| `/` | **Landing** (homepage) — Nocturne hero, **with the schematic swap** | `design-src/Nyx Landing.dc.html` (+ Directions C) |
+| `/brand-board` | Brand Board — essence, eclipse mark, color, type, motifs | `design-src/Nyx Brand Board.dc.html` |
+| `/app` | App Flow — 6 screens, access → … → settled | `design-src/Nyx App.dc.html` |
+| `/directions` | Directions — Blotter / Nocturne / Schematic compared | `design-src/Nyx Directions.dc.html` |
+| `/deliverables` | Hub linking the four surfaces (hand-written TSX) | — |
 
 ## Layout
 
 ```
 web/
-├── design-src/        # the 4 Claude Design canvases — SOURCE OF TRUTH, do not edit
-│   ├── Nyx Brand Board.dc.html
-│   ├── Nyx App.dc.html
-│   ├── Nyx Landing.dc.html
-│   └── Nyx Directions.dc.html
-├── styles/
-│   ├── tokens.css     # canonical brand tokens (palette, type, motion) as CSS variables
-│   └── base.css       # reset, ::selection, and the shared @keyframes (consumes tokens.css)
-├── index.html         # hub linking the deliverables
-├── brand-board.html   # ← Nyx Brand Board   (essence, eclipse mark, color, type, motifs, in-use)
-├── landing.html       # ← Nyx Landing       (WITH the schematic swap — see below)
-├── app.html           # ← Nyx App           (6-screen flow: access → … → settled)
-└── directions.html    # ← Nyx Directions    (Blotter / Nocturne / Schematic compared)
+├── app/
+│   ├── layout.tsx        # root layout; loads Google Fonts (literal family names) + globals.css
+│   ├── globals.css       # brand tokens (:root vars), reset, ::selection, shared @keyframes
+│   ├── page.tsx          # /            → renders the landing canvas (with the swap)
+│   ├── brand-board/page.tsx
+│   ├── app/page.tsx
+│   ├── directions/page.tsx
+│   ├── deliverables/page.tsx   # the hub, written as real TSX with next/link
+│   ├── _lib/design.tsx   # <Design file=…/> — reads a partial and renders it verbatim
+│   └── _content/         # the approved canvas bodies (the implemented markup)
+│       ├── landing.html  #   ← contains the schematic-swapped "Four steps" section
+│       ├── brand-board.html
+│       ├── app.html
+│       └── directions.html
+├── design-src/           # the 4 Claude Design canvases — SOURCE OF TRUTH, do not edit
+├── next.config.mjs · tsconfig.json · package.json
+└── README.md
 ```
 
-## Deliberate divergence — the landing "Four steps" swap
+## How the designs are rendered (embed, not rewrite)
 
-[`landing.html`](./landing.html) faithfully reproduces the **Nyx Landing** canvas **except for
-one section**, by explicit request:
+The four canvases are self-contained, fully **inline-styled** Claude Design artifacts. Rather
+than hand-rewrite ~2,500 lines of inline styles into React style objects (which would risk
+visual drift), each route renders the approved body markup **verbatim** through
+[`app/_lib/design.tsx`](./app/_lib/design.tsx):
 
-> Replace the landing's "Four steps. Nothing revealed." section with the **schematic**
-> "four steps nothing revealed" direction from **Nyx Directions**.
+```tsx
+export function Design({ file }: { file: string }) {
+  const html = readFileSync(join(process.cwd(), "app/_content", file), "utf8");
+  return <div dangerouslySetInnerHTML={{ __html: html }} />;
+}
+```
 
-So the settlement-path section (`data-screen-label="How it works"`) is rendered using
-**Direction C · Schematic** from
-[`design-src/Nyx Directions.dc.html`](./design-src/Nyx%20Directions.dc.html) — the
-commit → prove → verify → settle **node graph** (78px circular nodes on an animated dashed
-connector line, node 04 highlighted, a `Disclosure 0 bytes / Trust assumed None / Settlement
-Atomic` spec strip, and the grid blueprint background) — **in place of** the landing canvas's
-original row-list treatment of the same content. Everything else on the landing (nav, hero,
-manifesto, asset classes, Built on Stellar, proof stats, access CTA, footer) is unchanged.
+The partials in `app/_content/*.html` are the `<body>` of each implemented page (inline styles
+and inline SVGs intact); they're read at **build time** during static generation and baked into
+the prerendered HTML. `app/_content/` is the implemented (derived) markup; **`design-src/` is the
+authoritative design.** These pages are static design surfaces — fine to decompose into granular
+React components later if the product needs it.
 
-The Schematic is absolutely positioned inside a fixed 980px frame in its source canvas; here it
-is re-flowed into a normal in-flow landing section so it scrolls naturally with the rest of the
-page.
+## The landing "Four steps" swap (deliberate divergence)
 
-## How these were produced
+`/` reproduces the **Nyx Landing** canvas **except for one section**, by explicit request: the
+settlement-path section (`data-screen-label="How it works"`) is rendered with **Direction C ·
+Schematic** from `design-src/Nyx Directions.dc.html` — the commit → prove → verify → settle
+**node graph** (78px circular nodes on an animated dashed connector, node 04 highlighted, a
+`Disclosure 0 bytes / Trust assumed None / Settlement Atomic` spec strip, blueprint grid
+background, `FIG. 01 / NYX SETTLEMENT PATH` caption) — **in place of** the landing canvas's
+original row-list of the same content. The Schematic is absolutely positioned in a fixed 980px
+frame in its source canvas; here it is re-flowed into a normal in-flow landing section so it
+scrolls with the page. Everything else on the landing is unchanged.
 
-Each `.dc.html` canvas is a self-contained, fully **inline-styled** Claude Design artifact wrapped
-in `<x-dc>` / `<helmet>` custom elements with a `support.js` runtime hook. The conversion to a
-standalone page is mechanical and identical for all four:
+## Fonts & tokens
 
-1. drop `<script src="./support.js">` (the design-tool runtime — not needed standalone);
-2. unwrap `<x-dc>` / `<helmet>`, hoisting the Google Fonts `<link>` into a real `<head>`;
-3. link `styles/tokens.css` + `styles/base.css` (`base.css` carries the shared `*{box-sizing}`,
-   `html,body` reset, `::selection`, and the five `@keyframes`, deduped from the inline `<style>`);
-4. keep the body markup (including `data-screen-label`) verbatim for pixel fidelity.
+- **Fonts** load via a Google Fonts `<link>` in [`app/layout.tsx`](./app/layout.tsx) — *not*
+  `next/font` — on purpose: the inline styles reference the literal family names `'Spectral'`,
+  `'Archivo'`, `'IBM Plex Mono'`, which `next/font` would hash/rename. An internet connection is
+  needed for them to render as designed (otherwise the generic serif/sans/mono fallbacks apply).
+- **Tokens** live in [`app/globals.css`](./app/globals.css) as `:root` custom properties and are
+  the canonical reference for the palette, type stacks, and motion; they also drive the shared
+  page chrome (body background, selection). The page bodies keep their inline styles for fidelity,
+  so editing a token will not restyle a section's internals — `globals.css` is the source of truth
+  for *values*, the `design-src/` canvases for *layout*.
 
-`app.html` and `directions.html` are presentation boards (light `#e7e5df`, "scroll right to
-compare/follow") — faithful reproductions of their canvases, which are themselves showcases rather
-than single running screens.
-
-## A note on tokenization (honest scope)
-
-`styles/tokens.css` is the **canonical reference** for the brand palette, type stacks, and motion,
-and it drives the shared page chrome (body background, text color, selection) via `base.css`. The
-page **bodies retain their original inline styles** to stay pixel-faithful to the design source —
-they are intentionally **not** rewritten to consume the tokens, so editing a token will not restyle
-a section's internals. Treat `tokens.css` as the source of truth for *values*; the canvases in
-`design-src/` are the source of truth for *layout*.
-
-## Brand tokens (from Nyx Brand Board)
+### Brand tokens (from Nyx Brand Board)
 
 | Role | Token | Value |
 |------|-------|-------|
@@ -81,10 +106,9 @@ a section's internals. Treat `tokens.css` as the source of truth for *values*; t
 | Functional | Bid / Ask | `#43C08A` · `#E05A6E` |
 | Type | display / body / data | Spectral · Archivo · IBM Plex Mono |
 
-Fonts load from Google Fonts; an internet connection is needed for them to render as designed
-(otherwise the browser falls back to the generic serif / sans / monospace families).
-
 ## Regenerating from the design
 
-If a canvas in `design-src/` changes, re-apply the 4-step conversion above to the corresponding
-page. The `design-src/` files are the authoritative design; the implemented pages are derived.
+If a canvas in `design-src/` changes, re-derive the matching `app/_content/*.html` body (apply
+the same conversion: drop the `support.js` script, unwrap `<x-dc>`/`<helmet>`, keep the body
+markup; for the landing, re-apply the schematic swap). `design-src/` is authoritative; everything
+under `app/_content/` is derived.
