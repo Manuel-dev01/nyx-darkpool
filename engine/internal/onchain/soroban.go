@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 )
 
@@ -78,47 +79,43 @@ func (c Config) VerifyAndSettle(ctx context.Context, submitter string, p Proof) 
 }
 
 // buildInvokeArgs assembles the `stellar contract invoke` argument vector.
+//
+// The CLI wants raw hex (no 0x prefix) for BytesN, and a Vec<BytesN<32>> as a
+// SINGLE JSON array argument (e.g. --public_inputs '["aa..","bb.."]'), not
+// repeated flags.
 func (c Config) buildInvokeArgs(submitter string, p Proof) []string {
-	args := []string{
+	quoted := make([]string, len(p.Public))
+	for i, pub := range p.Public {
+		quoted[i] = `"` + strip0x(pub) + `"`
+	}
+	publicJSON := "[" + strings.Join(quoted, ",") + "]"
+
+	return []string{
 		"contract", "invoke",
 		"--id", c.ContractID,
-		"--source", c.Source,
+		"--source-account", c.Source,
 		"--network", c.Network,
 		"--", // separates CLI flags from contract function + args
 		"verify_and_settle",
 		"--submitter", submitter,
-		"--proof_a", p.A,
-		"--proof_b", p.B,
-		"--proof_c", p.C,
+		"--proof_a", strip0x(p.A),
+		"--proof_b", strip0x(p.B),
+		"--proof_c", strip0x(p.C),
+		"--public_inputs", publicJSON,
 	}
-	// Vec<BytesN<32>> is passed as repeated --public_inputs entries.
-	for _, pub := range p.Public {
-		args = append(args, "--public_inputs", pub)
-	}
-	return args
 }
 
-// parseTxHash extracts the settlement tx hash from the CLI output. The stellar
-// CLI prints the transaction hash on invoke; we take the last non-empty token
-// that looks like a 64-hex hash, falling back to the trimmed output.
+func strip0x(s string) string { return strings.TrimPrefix(s, "0x") }
+
+// txHashRe matches a 64-hex-character Stellar transaction hash. The stellar CLI
+// prints it on invoke (e.g. "Signing transaction: <hash>").
+var txHashRe = regexp.MustCompile(`[0-9a-fA-F]{64}`)
+
+// parseTxHash extracts the settlement tx hash from the CLI output — the first
+// 64-hex run (the contract id is a C... strkey, not hex, so it won't match).
+// Returns "" if none is found.
 func parseTxHash(out string) string {
-	lines := strings.Split(strings.TrimSpace(out), "\n")
-	for i := len(lines) - 1; i >= 0; i-- {
-		tok := strings.Trim(strings.TrimSpace(lines[i]), `"`)
-		if len(tok) == 64 && isHex(tok) {
-			return tok
-		}
-	}
-	return strings.TrimSpace(out)
-}
-
-func isHex(s string) bool {
-	for _, r := range s {
-		if !((r >= '0' && r <= '9') || (r >= 'a' && r <= 'f') || (r >= 'A' && r <= 'F')) {
-			return false
-		}
-	}
-	return len(s) > 0
+	return txHashRe.FindString(out)
 }
 
 func getenv(key, def string) string {

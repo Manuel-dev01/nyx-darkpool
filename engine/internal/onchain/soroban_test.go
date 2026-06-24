@@ -39,10 +39,11 @@ func TestBuildInvokeArgs(t *testing.T) {
 
 	joined := join(args)
 	for _, want := range []string{
-		"contract invoke", "--id CID1", "--source nyx-engine", "--network local",
+		"contract invoke", "--id CID1", "--source-account nyx-engine", "--network local",
 		"verify_and_settle", "--submitter GSUBMITTER",
-		"--proof_a 0xaa", "--proof_b 0xbb", "--proof_c 0xcc",
-		"--public_inputs 0x01", "--public_inputs 0x02",
+		// 0x stripped; public inputs as a single JSON array.
+		"--proof_a aa", "--proof_b bb", "--proof_c cc",
+		`--public_inputs ["01","02"]`,
 	} {
 		if !contains(joined, want) {
 			t.Errorf("invoke args missing %q; got: %s", want, joined)
@@ -52,13 +53,13 @@ func TestBuildInvokeArgs(t *testing.T) {
 
 func TestParseTxHash(t *testing.T) {
 	hash := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-	out := "some log line\n\"" + hash + "\"\n"
+	out := "ℹ️  Simulating transaction…\nℹ️  Signing transaction: " + hash + "\n🌎 Sending…\n"
 	if got := parseTxHash(out); got != hash {
 		t.Fatalf("parseTxHash = %q, want %q", got, hash)
 	}
-	// no hash present -> trimmed fallback
-	if got := parseTxHash("  result  \n"); got != "result" {
-		t.Fatalf("fallback parseTxHash = %q", got)
+	// no 64-hex hash present -> empty
+	if got := parseTxHash("no hash here\n"); got != "" {
+		t.Fatalf("expected empty, got %q", got)
 	}
 }
 

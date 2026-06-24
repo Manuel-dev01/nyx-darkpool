@@ -23,6 +23,11 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Ensure the rustup cargo shim is reachable for `stellar contract build`
+# (cargo is not on the system PATH in this environment).
+export PATH="$HOME/.cargo/bin:$PATH"
+
 NETWORK="${NYX_SOROBAN_NETWORK:-local}"
 SOURCE="${NYX_SOROBAN_SOURCE:-nyx-engine}"
 STELLAR="${NYX_STELLAR_BIN:-$ROOT/scripts/bin/stellar.exe}"
