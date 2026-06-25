@@ -1,8 +1,8 @@
 # Nyx Engine
 
 Off-chain matching engine for the Nyx darkpool — a concurrent Go service backed by
-PostgreSQL that manages the encrypted order book, pairs compatible orders, and (from
-Phase 5) routes ZK proof generation for on-chain settlement.
+PostgreSQL that manages the encrypted order book, pairs compatible orders, generates their
+Groth16 proofs, and settles them on-chain (Phase 5).
 
 ## Package layout
 
@@ -12,12 +12,37 @@ engine/
 ├── internal/
 │   ├── config/          # env-driven, validated configuration (12-factor, fail-fast)
 │   ├── db/              # pgxpool wrapper + SERIALIZABLE transaction helper
-│   ├── api/             # HTTP surface (Phase 2: /healthz with live DB ping)
-│   ├── matcher/         # order-pairing worker loop (Phase 2: lifecycle stub)
+│   ├── order/           # order domain type + encrypted_blob payload (price/volume/salt) codec
+│   ├── store/           # data-access layer: open-orders scan, atomic CreateMatch, proof/onchain writes
+│   ├── prove/           # snarkjs proof generator (witness → groth16 prove) via os/exec, per-call temp dir
+│   ├── api/             # HTTP surface: /healthz, POST /orders, GET /orders, GET /matches/{id}
+│   ├── matcher/         # Phase 5: concurrent worker pool — match → prove → on-chain settle
 │   ├── onchain/         # Phase 4: env-gated Soroban bridge (invoke verify_and_settle)
 │   └── e2e/             # integration-gated off-chain + on-chain E2E pipeline
 └── db/migrations/       # golang-migrate SQL migrations (up/down pairs)
 ```
+
+## The matcher pipeline (Phase 5)
+
+```
+poll loop (ticker)                     worker pool ×N (CPU-bound proving)
+  matchOnce: pair crossing ask/bid  →  prove.Generate (snarkjs)  →  store.SetProof
+    under SERIALIZABLE (40001-safe)     → (if NYX_SOROBAN_CONTRACT_ID set)
+  dispatch unproven matches ───────►       onchain.VerifyAndSettle → store.SetOnchain
+```
+
+- **Concurrency safety lives in the DB, not locks:** `CreateMatch` flips both orders
+  `open→matched` inside a `SERIALIZABLE` tx; the `matches` UNIQUE(maker)/UNIQUE(taker) constraints
+  are the backstop. Racing workers (or processes) can't double-match — the loser gets
+  `ErrAlreadyMatched`/`ErrSerialization` and skips. Proven by the racing-matchers `-race` test.
+- **Crash-safe proving:** matches are dispatched by scanning `proof_blob IS NULL`, so a proof
+  interrupted by shutdown is simply retried next tick — nothing is lost to an in-memory queue.
+- **Trust model:** the engine is the off-chain prover, so the order's raw `price/volume/salt` live
+  in `orders.encrypted_blob` (plaintext-at-rest for now; encrypting at rest is a documented seam).
+  The public chain/mempool only ever sees the commitment + proof. A lying client whose commitment
+  ≠ `Poseidon(price,volume,salt)` simply produces an unprovable order (witness calc fails).
+- **Proving optional:** if the circuit isn't compiled (`circuits/build/` artifacts absent), the
+  engine still runs and matches orders; proofs are skipped (matches stay unproven) until built.
 
 ## Data model (migrations `000001_init_schema`, `000002_order_commitment`)
 
@@ -44,6 +69,26 @@ Enums: `order_status (open|matched|settled|cancelled)`, `order_side (bid|ask)`,
 | `NYX_DB_MAX_CONNS`       | `10`                                                     | pgx pool size                    |
 | `NYX_DB_CONNECT_TIMEOUT` | `10s`                                                    | startup DB connect deadline      |
 | `NYX_LOG_LEVEL`          | `info`                                                   | slog level: debug/info/warn/error|
+| `NYX_MATCHER_WORKERS`    | CPU count (capped at 8)                                  | concurrent proof-generation workers |
+| `NYX_MATCHER_POLL_INTERVAL` | `1s`                                                  | match + dispatch cycle interval  |
+| `NYX_CIRCUITS_ROOT`      | `../circuits`                                             | wasm/zkey/vkey + node_modules for proving |
+| `NYX_SCRIPTS_ROOT`       | `../scripts`                                              | `proof_to_bytes.js` (proof → BN254 bytes) |
+| `NYX_NODE_BIN`           | `node`                                                   | Node.js binary driving snarkjs   |
+
+The on-chain settlement leg additionally reads `NYX_SOROBAN_CONTRACT_ID` (+ `_NETWORK`,
+`_SOURCE`, `NYX_STELLAR_BIN`) — see *On-chain settlement bridge* below; unset ⇒ the matcher
+stops after storing `proof_blob`.
+
+## Order API (Phase 5)
+
+| Method & path        | Purpose                                                                 |
+|----------------------|-------------------------------------------------------------------------|
+| `POST /orders`       | Submit a sealed order: `{pubkey, asset_pair, side, price, volume, salt, commitment, nullifier}` → `201 {id}`. `409` on nullifier reuse, `400` on bad input. |
+| `GET /orders`        | List recent orders (no private values); `?limit=` (default 100).        |
+| `GET /matches/{id}`  | Read a match: maker/taker ids, `has_proof`, `onchain_status`, `settlement_tx`. |
+
+`price/volume/salt` are base-10 integer strings; the client computes its own `commitment`
+(Poseidon) and `nullifier` ("sealed locally"). The matcher picks up `open` orders automatically.
 
 ## Local development
 

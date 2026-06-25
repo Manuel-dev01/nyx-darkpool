@@ -25,6 +25,9 @@ import (
 	"github.com/nyx-darkpool/engine/internal/config"
 	"github.com/nyx-darkpool/engine/internal/db"
 	"github.com/nyx-darkpool/engine/internal/matcher"
+	"github.com/nyx-darkpool/engine/internal/onchain"
+	"github.com/nyx-darkpool/engine/internal/prove"
+	"github.com/nyx-darkpool/engine/internal/store"
 )
 
 func main() {
@@ -60,20 +63,40 @@ func run() error {
 	}
 	defer database.Close()
 
+	// --- Data access + proof/on-chain dependencies -----------------------
+	st := store.New(database)
+
+	// The proof generator needs the compiled circuit artifacts. If they're
+	// absent the engine still runs and matches orders; proofs are just skipped
+	// (matches stay unproven) until the circuit is built. Disabled => nil iface.
+	var prover matcher.Prover
+	if p, perr := prove.New(prove.Config{
+		NodeBin:      cfg.NodeBin,
+		CircuitsRoot: cfg.CircuitsRoot,
+		ScriptsRoot:  cfg.ScriptsRoot,
+	}); perr != nil {
+		logger.Warn("proof generation disabled (circuit artifacts missing)", "error", perr)
+	} else {
+		prover = p
+	}
+
+	oc := onchain.FromEnv()
+
 	// --- HTTP API --------------------------------------------------------
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           api.NewServer(database, logger).Routes(),
+		Handler:           api.NewServer(database, st, logger).Routes(),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	var wg sync.WaitGroup
 
-	// Matcher worker loop.
+	// Matcher worker loop (concurrent matching → proof → on-chain settle).
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err := matcher.New(database, logger).Run(ctx); err != nil {
+		mcfg := matcher.Config{Workers: cfg.MatcherWorkers, PollInterval: cfg.MatcherPollInterval}
+		if err := matcher.New(st, prover, oc, mcfg, logger).Run(ctx); err != nil {
 			logger.Error("matcher exited with error", "error", err)
 		}
 	}()

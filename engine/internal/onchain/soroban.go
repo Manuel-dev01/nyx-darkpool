@@ -105,6 +105,17 @@ func (c Config) buildInvokeArgs(submitter string, p Proof) []string {
 	}
 }
 
+// ResolveAddress returns the G... address for the configured Source identity by
+// asking the CLI (`stellar keys address <name>`). The matcher uses it as the
+// verify_and_settle submitter.
+func (c Config) ResolveAddress(ctx context.Context) (string, error) {
+	out, err := exec.CommandContext(ctx, c.Bin, "keys", "address", c.Source).CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("onchain: resolve address for %q: %w\n%s", c.Source, err, string(out))
+	}
+	return strings.TrimSpace(string(out)), nil
+}
+
 func strip0x(s string) string { return strings.TrimPrefix(s, "0x") }
 
 // txHashRe matches a 64-hex-character Stellar transaction hash. The stellar CLI
