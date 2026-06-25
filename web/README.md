@@ -1,8 +1,9 @@
 # web — Nyx brand & product (Next.js)
 
-The Nyx visual identity and product surfaces as a **Next.js (App Router, TypeScript)**
-application. Each Claude Design canvas is implemented as a route; the markup is rendered
-**verbatim** from the approved design so the pages stay pixel-identical to the source.
+The Nyx marketing site and product frontend as a **Next.js (App Router, TypeScript)** app.
+The **landing** and **`/app`** are real, interactive TSX (working links, buttons, navigation,
+form controls). The **brand-board** and **directions** routes remain embedded design showcases
+(brand/exploration artifacts), rendered verbatim from the approved canvases.
 
 ## Run it
 
@@ -14,101 +15,105 @@ npm run dev      # http://localhost:3000
 npm run build && npm start
 ```
 
-All routes are statically prerendered (`next build` → `○ (Static)`), so the app can also be
-deployed to any static/edge host (e.g. Vercel) with no server runtime.
-
 ## Routes
 
-| Route | Surface | Source canvas |
-|-------|---------|---------------|
-| `/` | **Landing** (homepage) — Nocturne hero, **with the schematic swap** | `design-src/Nyx Landing.dc.html` (+ Directions C) |
-| `/brand-board` | Brand Board — essence, eclipse mark, color, type, motifs | `design-src/Nyx Brand Board.dc.html` |
-| `/app` | App Flow — 6 screens, access → … → settled | `design-src/Nyx App.dc.html` |
-| `/directions` | Directions — Blotter / Nocturne / Schematic compared | `design-src/Nyx Directions.dc.html` |
-| `/deliverables` | Hub linking the four surfaces (hand-written TSX) | — |
+| Route | Surface | Kind |
+|-------|---------|------|
+| `/` | **Landing** — Nocturne hero, schematic settlement-path section, working nav/CTAs | interactive TSX |
+| `/app/access` | **Desk access** — signed-key sign-in (the landing's "Enter the pool" target) | interactive TSX |
+| `/app` | **Desk** — stats, open orders, activity | interactive TSX |
+| `/app/compose` | **Compose & seal** — live order form (side/TIF toggles, inputs, seal preview) | interactive TSX |
+| `/app/pool` | **In the pool** — shielded lattice + your order | interactive TSX |
+| `/app/proofs` | **Match · prove · verify** — pipeline + proof/on-chain panels | interactive TSX |
+| `/app/settled` | **Settlement** — atomic receipt + explorer link | interactive TSX |
+| `/app/positions` | **Positions** — on-brand placeholder (view pending) | interactive TSX |
+| `/brand-board` | Brand Board | embedded showcase |
+| `/directions` | Blotter / Nocturne / Schematic | embedded showcase |
+| `/deliverables` | Hub linking the surfaces | TSX |
+
+## The landing (`/`)
+
+Real TSX rebuilt from `design-src/Nyx Landing.dc.html`, preserving the look — **including the
+deliberate swap** of the "Four steps. Nothing revealed." section for the **Schematic** node graph
+(Direction C from `design-src/Nyx Directions.dc.html`): commit → prove → verify → settle as nodes
+on an animated connector, with the `0 bytes / None / Atomic` spec strip. It's a Server Component
+(only `<Link>` + anchors + external `<a>`, no JS). Link behavior:
+
+| Element | Goes to |
+|---------|---------|
+| Nav **Protocol** / **Proofs** | smooth-scroll to `#how` / `#trust` |
+| Nav **Docs**, hero **Read the spec**, schematic **READ THE SPEC** | the repo (new tab) |
+| Nav **Enter the pool**, hero/CTA **Request desk access** | `/app/access` |
+| CTA **Talk to us** | `mailto:` — **placeholder address, set it in `app/page.tsx` (`CONTACT`)** |
+
+Smooth scrolling is enabled by `html { scroll-behavior: smooth }` in `app/globals.css`; sections
+carry `scrollMarginTop` to clear the sticky nav.
+
+## The product app (`/app/*`)
+
+The App design canvas was a *presentation board* (light background, floating cards, captions). It
+is **productized** here into a full-screen dark app: a persistent shell (`app/app/(shell)/layout.tsx`)
+with a sidebar (`SideNav`, active-route highlight via `usePathname`) and a scrolling content area.
+The sign-in screen sits outside the shell (route group `(shell)`), so `/app/access` renders
+full-screen.
+
+Interactivity is kept to small `'use client'` islands — `SideNav` (active state) and `ComposeForm`
+(BID/ASK + GTC/IOC/1H toggles, controlled price/size inputs, live seal preview). Screens are
+otherwise Server Components. Navigational buttons use `<Link>` (e.g. **+ New** → compose,
+**Seal & broadcast** → pool, **Authenticate** → desk); genuinely-stateful actions are real
+`<button>`s that are **no-ops for now** (e.g. **Download receipt**) — the matching/proof/settlement
+**logic is intentionally not wired yet**. Demo flow:
+
+```
+/  →  Enter the pool  →  /app/access  →  Authenticate  →  /app (Desk)
+   →  + New  →  /app/compose  →  Seal & broadcast  →  /app/pool  →  /app/proofs  →  /app/settled
+```
 
 ## Layout
 
 ```
 web/
 ├── app/
-│   ├── layout.tsx        # root layout; loads Google Fonts (literal family names) + globals.css
-│   ├── globals.css       # brand tokens (:root vars), reset, ::selection, shared @keyframes
-│   ├── page.tsx          # /            → renders the landing canvas (with the swap)
-│   ├── brand-board/page.tsx
-│   ├── app/page.tsx
-│   ├── directions/page.tsx
-│   ├── deliverables/page.tsx   # the hub, written as real TSX with next/link
-│   ├── _lib/design.tsx   # <Design file=…/> — reads a partial and renders it verbatim
-│   └── _content/         # the approved canvas bodies (the implemented markup)
-│       ├── landing.html  #   ← contains the schematic-swapped "Four steps" section
-│       ├── brand-board.html
-│       ├── app.html
-│       └── directions.html
-├── design-src/           # the 4 Claude Design canvases — SOURCE OF TRUTH, do not edit
+│   ├── layout.tsx              # root layout; Google Fonts (literal family names) + globals.css
+│   ├── globals.css             # brand tokens (:root vars), reset, ::selection, keyframes, smooth scroll
+│   ├── page.tsx                # /  → interactive landing (with the schematic swap)
+│   ├── _components/Eclipse.tsx # the eclipse mark, reused across landing + app
+│   ├── _lib/design.tsx         # <Design/> — verbatim render for the embedded showcases
+│   ├── _content/{brand-board,directions}.html   # the embedded showcase bodies
+│   ├── brand-board/page.tsx · directions/page.tsx · deliverables/page.tsx
+│   └── app/
+│       ├── _components/{SideNav,Topbar,ComposeForm}.tsx
+│       ├── access/page.tsx     # /app/access (full-screen, outside the shell)
+│       └── (shell)/            # product shell route group
+│           ├── layout.tsx      # sidebar + content frame
+│           ├── page.tsx        # /app (Desk)
+│           └── {compose,pool,proofs,settled,positions}/page.tsx
+├── design-src/                 # the 4 Claude Design canvases — SOURCE OF TRUTH, do not edit
 ├── next.config.mjs · tsconfig.json · package.json
 └── README.md
 ```
 
-## How the designs are rendered (embed, not rewrite)
-
-The four canvases are self-contained, fully **inline-styled** Claude Design artifacts. Rather
-than hand-rewrite ~2,500 lines of inline styles into React style objects (which would risk
-visual drift), each route renders the approved body markup **verbatim** through
-[`app/_lib/design.tsx`](./app/_lib/design.tsx):
-
-```tsx
-export function Design({ file }: { file: string }) {
-  const html = readFileSync(join(process.cwd(), "app/_content", file), "utf8");
-  return <div dangerouslySetInnerHTML={{ __html: html }} />;
-}
-```
-
-The partials in `app/_content/*.html` are the `<body>` of each implemented page (inline styles
-and inline SVGs intact); they're read at **build time** during static generation and baked into
-the prerendered HTML. `app/_content/` is the implemented (derived) markup; **`design-src/` is the
-authoritative design.** These pages are static design surfaces — fine to decompose into granular
-React components later if the product needs it.
-
-## The landing "Four steps" swap (deliberate divergence)
-
-`/` reproduces the **Nyx Landing** canvas **except for one section**, by explicit request: the
-settlement-path section (`data-screen-label="How it works"`) is rendered with **Direction C ·
-Schematic** from `design-src/Nyx Directions.dc.html` — the commit → prove → verify → settle
-**node graph** (78px circular nodes on an animated dashed connector, node 04 highlighted, a
-`Disclosure 0 bytes / Trust assumed None / Settlement Atomic` spec strip, blueprint grid
-background, `FIG. 01 / NYX SETTLEMENT PATH` caption) — **in place of** the landing canvas's
-original row-list of the same content. The Schematic is absolutely positioned in a fixed 980px
-frame in its source canvas; here it is re-flowed into a normal in-flow landing section so it
-scrolls with the page. Everything else on the landing is unchanged.
-
 ## Fonts & tokens
 
-- **Fonts** load via a Google Fonts `<link>` in [`app/layout.tsx`](./app/layout.tsx) — *not*
-  `next/font` — on purpose: the inline styles reference the literal family names `'Spectral'`,
-  `'Archivo'`, `'IBM Plex Mono'`, which `next/font` would hash/rename. An internet connection is
-  needed for them to render as designed (otherwise the generic serif/sans/mono fallbacks apply).
-- **Tokens** live in [`app/globals.css`](./app/globals.css) as `:root` custom properties and are
-  the canonical reference for the palette, type stacks, and motion; they also drive the shared
-  page chrome (body background, selection). The page bodies keep their inline styles for fidelity,
-  so editing a token will not restyle a section's internals — `globals.css` is the source of truth
-  for *values*, the `design-src/` canvases for *layout*.
+- **Fonts** load via a Google Fonts `<link>` in `app/layout.tsx` (not `next/font`) so the literal
+  family names `'Spectral'`, `'Archivo'`, `'IBM Plex Mono'` used in styles resolve. Needs an
+  internet connection to render as designed.
+- **Tokens** live in `app/globals.css` (`:root` custom properties) — the canonical reference for
+  the palette, type, and motion, and they drive the shared body/selection chrome.
 
 ### Brand tokens (from Nyx Brand Board)
 
-| Role | Token | Value |
-|------|-------|-------|
-| Background | Void | `#07080A` |
-| Surface | Obsidian / Slate | `#0D0F12` / `#15181D` |
-| Lines | Graphite / borders | `#23272E` · `#16191D` · `#13171C` |
-| Text | Moon / Smoke / faint | `#ECEEF0` · `#8A9099` · `#3D434B` |
-| Accent · Lumen | Lumen / Deep / Veil | `#3BD7E0` · `#0E7E86` · `#0A2E31` |
-| Functional | Bid / Ask | `#43C08A` · `#E05A6E` |
-| Type | display / body / data | Spectral · Archivo · IBM Plex Mono |
+| Role | Value |
+|------|-------|
+| Void / Moon (bg / text) | `#07080A` / `#ECEEF0` |
+| Surfaces / lines | `#0D0F12` · `#15181D` · `#23272E` / `#13171C` · `#16191D` |
+| Accent · Lumen | `#3BD7E0` (deep `#0E7E86`, veil `#0A2E31`) |
+| Functional | Bid `#43C08A` · Ask `#E05A6E` |
+| Type | Spectral · Archivo · IBM Plex Mono |
 
-## Regenerating from the design
+## Notes & placeholders
 
-If a canvas in `design-src/` changes, re-derive the matching `app/_content/*.html` body (apply
-the same conversion: drop the `support.js` script, unwrap `<x-dc>`/`<helmet>`, keep the body
-markup; for the landing, re-apply the schematic swap). `design-src/` is authoritative; everything
-under `app/_content/` is derived.
+- `CONTACT` mailto in `app/page.tsx` and the **Positions** screen are placeholders.
+- The product UI is presentational; **order matching, proof generation, and settlement logic are
+  not wired** — the buttons and flow are real, the backend hooks come next.
+- `design-src/` is authoritative; the embedded showcases under `app/_content/` are derived.

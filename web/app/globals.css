@@ -41,12 +41,19 @@
 
 * { box-sizing: border-box; }
 
+html {
+  /* anchor-nav (Protocol/Proofs/Docs) scrolls smoothly to landing sections */
+  scroll-behavior: smooth;
+}
+
 html, body {
   margin: 0;
   padding: 0;
   background: var(--nyx-void);
   color: var(--nyx-moon);
 }
+
+a { color: inherit; }
 
 ::selection {
   background: var(--nyx-selection-bg);

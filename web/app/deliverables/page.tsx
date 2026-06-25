@@ -49,10 +49,10 @@ const items = [
     body: "The Nocturne hero — with the Schematic settlement-path node graph in place of the row-list “Four steps. Nothing revealed.”",
   },
   {
-    href: "/app",
-    kicker: "03 · Product",
-    title: "App Flow",
-    body: "Six screens, end to end: access → desk → compose & seal → pool → prove & verify → settled.",
+    href: "/app/access",
+    kicker: "03 · Product (live)",
+    title: "The App",
+    body: "The interactive product frontend — sign in, desk, compose & seal, pool, prove & verify, settle.",
   },
   {
     href: "/directions",
