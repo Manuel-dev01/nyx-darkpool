@@ -5,7 +5,7 @@
 > starting a phase and to `DONE` (with the commit short-hash) after a phase compiles,
 > passes validation, and is committed.
 
-_Last updated: 2026-06-25 (Phase 6 — orchestration & Dockerization — IN PROGRESS)_
+_Last updated: 2026-06-26 (Phase 6 — orchestration & Dockerization — DONE; all six phases complete)_
 
 ## Phase Ledger
 
@@ -18,7 +18,7 @@ _Last updated: 2026-06-25 (Phase 6 — orchestration & Dockerization — IN PROG
 | 5     | Off-Chain Engine Logic (Go matcher + proofs)  | DONE        | 3931aa2 |
 | 5.1   | At-rest encryption + frontend wiring + testnet | DONE        | 5190040 |
 | 5.2   | Desk auth (signed orders) + demo-mode + receipt | DONE        | a5e2678 |
-| 6     | Orchestration & Dockerization                 | IN PROGRESS | —       |
+| 6     | Orchestration & Dockerization                 | DONE        | c80dfe3 |
 
 > **Phase 5.1** closes the honest notes from Phase 5: (A) AES-256-GCM **at-rest encryption** of the
 > order blob (ephemeral key by default — no secret on disk); (B) wiring the `web/` frontend to the
@@ -72,6 +72,28 @@ _Last updated: 2026-06-25 (Phase 6 — orchestration & Dockerization — IN PROG
   ed25519 signature. The secret seed is held in `localStorage` for this client-only demo — a
   **documented seam** (production signs via the **Freighter** wallet, where the secret never leaves
   the extension). Full write-up: [`docs/key-custody.md`](docs/key-custody.md).
+
+### Phase 6 — verification evidence (2026-06-26)
+**Commit:** `c80dfe3` (`feat: complete end-to-end Nyx darkpool architecture`). One-command full stack
+via `docker-compose.yml` + `Makefile`. **All six numbered phases are now complete.**
+
+- **Stack:** `docker compose up -d` → 4 services. `postgres:16` healthy → one-shot **`migrate`**
+  (`migrate/migrate`) applied `1/u init_schema` + `2/u order_commitment` and exited 0 → **`engine`**
+  (image built from `engine/Dockerfile`, node:24 base) and **`web`** (Next `output:"standalone"`).
+- **Engine in-container:** logs `database connected (host=postgres)` + `matcher started
+  proving:true onchain:false`; `GET :8080/healthz` → `{"status":"ok","db":"up"}`. Seeding a crossing
+  pair → both orders `matched` and `GET /matches/{id}` → **`has_proof: true`** — i.e. the Groth16
+  proof was generated **inside the engine container** via Node + snarkjs off the bind-mounted
+  `circuits/build` artifacts. `onchain_status: pending` (env-gated; on-chain stays the host/testnet
+  opt-in). **PASS.**
+- **Web in-container:** all routes 200; the Next standalone server proxies `/api/engine/*` to the
+  engine. `ENGINE_ORIGIN` is baked at **build** time (Next bakes `rewrites()`), so the web image is
+  built with `--build-arg ENGINE_ORIGIN=http://engine:8080`; the proxy then returns live engine data
+  (verified: `routes-manifest.json` → `http://engine:8080/:path*`). **PASS.**
+- **Makefile:** `up/down/down-v/logs/ps/migrate/seed/circuits/contracts/test-all/...`. **`make` is
+  not installed on the Windows dev host**, so each target was validated via its 1:1 `docker compose`/
+  `bash`/`go` equivalent (the targets are thin wrappers). `cd engine && go test ./...` stays green;
+  `cd web && npm run build` green with `output:"standalone"`.
 
 > Housekeeping commit `059ccac` (after Phase 2) replaced the empty-directory
 > `.gitkeep` placeholders with descriptive `README.md` files in `circuits/`,

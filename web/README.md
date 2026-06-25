@@ -20,6 +20,11 @@ engine** through a proxy — start the engine (`../engine`, default `:8080`) and
 if it runs elsewhere (`cp .env.example .env.local`). Without the engine, `/app` renders its
 loading/empty states.
 
+**Whole stack in one command:** from the repo root, `docker compose up -d` (or `make up`) builds
+this app as a Next **standalone** image and runs it alongside the engine + Postgres. Note Next bakes
+`rewrites()` at build time, so the image is built with `--build-arg ENGINE_ORIGIN=http://engine:8080`
+(see [`Dockerfile`](./Dockerfile) and [`../docker-compose.yml`](../docker-compose.yml)).
+
 ## Routes
 
 | Route | Surface | Kind |

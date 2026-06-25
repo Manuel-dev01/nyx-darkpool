@@ -101,10 +101,19 @@ stops after storing `proof_blob`.
 `price/volume/salt` are base-10 integer strings; the client computes its own `commitment`
 (Poseidon) and `nullifier` ("sealed locally"). The matcher picks up `open` orders automatically.
 
+## Run with Docker (full stack)
+
+From the repo root, `docker compose up -d` (or `make up`) builds this engine image (Go binary on a
+`node:24` base, so the matcher **proves in-container** off the bind-mounted `circuits/build`
+artifacts), runs the migrations via a one-shot `migrate/migrate` service, and starts Postgres + the
+web app wired together. See [`../docker-compose.yml`](../docker-compose.yml) and the root
+[`README.md`](../README.md) Quickstart. On-chain settle stays an opt-in host/testnet step (the image
+has no `stellar` CLI). The rest of this section is the from-source host workflow.
+
 ## Local development
 
 ```bash
-# 1. Start PostgreSQL (any 16/17/18 image works; compose pins 16 in Phase 6)
+# 1. Start PostgreSQL (any 16/17/18 image works; compose pins 16)
 docker run -d --name nyx-pg -e POSTGRES_USER=nyx -e POSTGRES_PASSWORD=nyx \
   -e POSTGRES_DB=nyx -p 5432:5432 postgres:16
 

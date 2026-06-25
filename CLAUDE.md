@@ -172,6 +172,10 @@ Acknowledge this manual by creating the `STATUS.md` file, summarizing your stric
   manual crossing. The Settled screen offers a **downloadable JSON receipt**.
 
 ### 5.4 Build status
-Phases 1–5 + the frontend track are **DONE**; Phase 5.1 (encryption + FE wiring + public testnet)
-and Phase 5.2 (desk auth + signed orders + demo-mode + receipt) are **DONE**. **Phase 6
-(Orchestration & Dockerization)** is the remaining numbered phase.
+**All six numbered phases are DONE**, plus the frontend track. Phase 5.1 (encryption + FE wiring +
+public testnet), Phase 5.2 (desk auth + signed orders + demo-mode + receipt), and **Phase 6
+(Orchestration & Dockerization)** are complete. Phase 6 ships a root **`docker-compose.yml`**
+(postgres + one-shot `migrate` + engine + web) and a **`Makefile`**; `docker compose up` runs the
+whole stack with **in-container proving** (Node + snarkjs in the engine image, `circuits/build`
+bind-mounted). On-chain settle stays an opt-in host/testnet step (no `stellar` CLI in the image).
+The web image bakes `ENGINE_ORIGIN` at build time (Next bakes `rewrites()`) → `http://engine:8080`.
