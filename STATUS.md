@@ -5,7 +5,7 @@
 > starting a phase and to `DONE` (with the commit short-hash) after a phase compiles,
 > passes validation, and is committed.
 
-_Last updated: 2026-06-25 (Phase 5 — concurrent matcher + proof + on-chain settle — DONE)_
+_Last updated: 2026-06-25 (Phase 5.1 — at-rest encryption + frontend wiring + public testnet — IN PROGRESS)_
 
 ## Phase Ledger
 
@@ -16,7 +16,14 @@ _Last updated: 2026-06-25 (Phase 5 — concurrent matcher + proof + on-chain set
 | 3     | ZK Circuit Construction (Circom + snarkjs)    | DONE        | 70bdafd |
 | 4     | Soroban Verifier Contract (Rust)              | DONE        | cf9b035 |
 | 5     | Off-Chain Engine Logic (Go matcher + proofs)  | DONE        | 3931aa2 |
+| 5.1   | At-rest encryption + frontend wiring + testnet | IN PROGRESS | —       |
 | 6     | Orchestration & Dockerization                 | PENDING     | —       |
+
+> **Phase 5.1** closes the honest notes from Phase 5: (A) AES-256-GCM **at-rest encryption** of the
+> order blob (ephemeral key by default — no secret on disk); (B) wiring the `web/` frontend to the
+> engine API (real Poseidon commitment → live order/match screens); (C) a **public testnet** deploy
+> of the verifier so the contract + settlement tx are browsable on stellar.expert (the Phase-5
+> on-chain run was on a local ephemeral network). Plus a CLAUDE.md/READMEs as-built sync.
 
 > Housekeeping commit `059ccac` (after Phase 2) replaced the empty-directory
 > `.gitkeep` placeholders with descriptive `README.md` files in `circuits/`,
