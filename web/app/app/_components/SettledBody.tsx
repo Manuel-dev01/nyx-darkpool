@@ -5,10 +5,42 @@ import Link from "next/link";
 import { Topbar } from "./Topbar";
 import { listOrders, getMatch, type Match, type OrderSummary } from "../../_lib/engine";
 import { shortId, hhmm, activeOrderId, explorerTxUrl } from "../../_lib/ui";
+import { loadDesk } from "../../_lib/desk";
 
 const mono = "'IBM Plex Mono', monospace";
 const serif = "'Spectral', serif";
 const sans = "'Archivo', sans-serif";
+
+/** Build a settlement receipt and trigger a client-side download. Private price/
+ * size stay sealed and are intentionally absent. */
+function downloadReceipt(match: Match, order: OrderSummary | null) {
+  const desk = loadDesk();
+  const receipt = {
+    kind: "nyx-settlement-receipt",
+    network: "testnet",
+    generated_at: new Date().toISOString(),
+    desk: desk?.publicKey ?? null,
+    order_id: order?.id ?? null,
+    asset_pair: order?.asset_pair ?? null,
+    match_id: match.id,
+    maker_order_id: match.maker_order_id,
+    taker_order_id: match.taker_order_id,
+    has_proof: match.has_proof,
+    onchain_status: match.onchain_status,
+    settlement_tx: match.settlement_tx ?? null,
+    explorer: match.settlement_tx ? explorerTxUrl(match.settlement_tx) : null,
+    note: "Price and size are sealed off-chain; the market saw only a verified proof.",
+  };
+  const blob = new Blob([JSON.stringify(receipt, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `nyx-receipt-${shortId(match.id, 4, 4).replace("…", "-")}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
 
 export function SettledBody() {
   const [match, setMatch] = useState<Match | null>(null);
@@ -109,6 +141,14 @@ export function SettledBody() {
             <div style={{ fontFamily: mono, fontSize: 10, color: "#565C64", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>Disclosed to market</div>
             <div style={{ fontFamily: serif, fontSize: 30, color: "#3BD7E0" }}>0 bytes</div>
           </div>
+          <button
+            type="button"
+            onClick={() => match && downloadReceipt(match, order)}
+            disabled={!match}
+            style={{ background: match ? "#3BD7E0" : "#0E7E86", color: "#07080A", fontFamily: sans, fontWeight: 600, fontSize: 14, padding: 15, textAlign: "center", letterSpacing: "0.02em", border: "none", cursor: match ? "pointer" : "default" }}
+          >
+            Download receipt
+          </button>
         </div>
       </div>
     </>
