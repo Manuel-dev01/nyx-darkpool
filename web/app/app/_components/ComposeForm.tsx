@@ -1,10 +1,24 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
-import Link from "next/link";
+import { useEffect, useState, type CSSProperties } from "react";
+import { useRouter } from "next/navigation";
+import { seal, type Sealed } from "../../_lib/seal";
+import { createOrder } from "../../_lib/engine";
 
 const mono = "'IBM Plex Mono', monospace";
 const sans = "'Archivo', sans-serif";
+
+// Fixed desk identity + market for this build (matches the access screen's
+// MERIDIAN CAPITAL · key 7af0). The engine treats pubkey/asset_pair as opaque
+// strings; both sides of a match must share the exact same asset_pair.
+const DESK_PUBKEY = "GMERIDIAN-CAPITAL-DESK-7AF0";
+const PAIR = "US-TBILL-26/USDC";
+
+/** Shorten a long decimal commitment for display. */
+function short(dec: string): string {
+  if (dec.length <= 18) return dec;
+  return `${dec.slice(0, 10)}…${dec.slice(-8)}`;
+}
 
 const label: CSSProperties = { fontFamily: mono, fontSize: 10, letterSpacing: "0.1em", color: "#3D434B", textTransform: "uppercase", marginBottom: 9 };
 const field: CSSProperties = { border: "1px solid #15181D", background: "#0A0C0F", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" };
@@ -15,10 +29,66 @@ type Side = "BID" | "ASK";
 type Tif = "GTC" | "IOC" | "1H";
 
 export function ComposeForm() {
+  const router = useRouter();
   const [side, setSide] = useState<Side>("BID");
   const [tif, setTif] = useState<Tif>("GTC");
   const [price, setPrice] = useState("99.84");
   const [size, setSize] = useState("5,000,000");
+
+  // Live local seal: recompute the real Poseidon commitment whenever the inputs
+  // change. The same sealed object is what we broadcast, so the preview matches
+  // exactly what the engine receives.
+  const [sealed, setSealed] = useState<Sealed | null>(null);
+  const [sealErr, setSealErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [submitErr, setSubmitErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    seal(price, size)
+      .then((s) => {
+        if (alive) {
+          setSealed(s);
+          setSealErr(null);
+        }
+      })
+      .catch((e) => {
+        if (alive) {
+          setSealed(null);
+          setSealErr(e instanceof Error ? e.message : String(e));
+        }
+      });
+    return () => {
+      alive = false;
+    };
+  }, [price, size]);
+
+  async function broadcast() {
+    if (!sealed || busy) return;
+    setBusy(true);
+    setSubmitErr(null);
+    try {
+      const { id } = await createOrder({
+        pubkey: DESK_PUBKEY,
+        asset_pair: PAIR,
+        side: side === "BID" ? "bid" : "ask",
+        price: sealed.priceInt,
+        volume: sealed.volumeInt,
+        salt: sealed.salt,
+        commitment: sealed.commitment,
+        nullifier: sealed.nullifier,
+      });
+      try {
+        localStorage.setItem("nyx.activeOrder", id);
+      } catch {
+        /* private mode / storage disabled — non-fatal */
+      }
+      router.push(`/app/pool?order=${encodeURIComponent(id)}`);
+    } catch (e) {
+      setSubmitErr(e instanceof Error ? e.message : String(e));
+      setBusy(false);
+    }
+  }
 
   return (
     <div style={{ flex: 1, display: "flex", minHeight: 0, flexWrap: "wrap" }}>
@@ -112,19 +182,33 @@ export function ComposeForm() {
         </div>
         <div style={{ border: "1px solid #15181D", padding: 18, marginBottom: 18 }}>
           <div style={{ fontFamily: mono, fontSize: 10, color: "#565C64", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>Poseidon commitment</div>
-          <div style={{ fontFamily: mono, fontSize: 12, color: "#3BD7E0", wordBreak: "break-all", lineHeight: 1.6 }}>0x9f3a8e21c40d77be5a1f0c2294ad6f88e1b7c204</div>
+          <div style={{ fontFamily: mono, fontSize: 12, color: sealErr ? "#E05A6E" : "#3BD7E0", wordBreak: "break-all", lineHeight: 1.6 }}>
+            {sealErr ? `// ${sealErr}` : sealed ? short(sealed.commitment) : "computing…"}
+          </div>
         </div>
         <div style={{ fontFamily: mono, fontSize: 11, color: "#565C64", lineHeight: 1.7, marginBottom: "auto" }}>
           {`// ${side} ${size} @ ${price} — price & size never leave this device.`}
           <br />
           {`// the network only ever sees this hash · TIF ${tif}.`}
         </div>
-        <Link
-          href="/app/pool"
-          style={{ background: "#3BD7E0", color: "#07080A", fontFamily: sans, fontWeight: 600, fontSize: 14, padding: 15, textAlign: "center", letterSpacing: "0.02em", textDecoration: "none", marginTop: 18 }}
+        {submitErr ? (
+          <div style={{ fontFamily: mono, fontSize: 11, color: "#E05A6E", lineHeight: 1.6, marginTop: 14 }}>
+            {`// broadcast failed: ${submitErr}`}
+          </div>
+        ) : null}
+        <button
+          type="button"
+          onClick={broadcast}
+          disabled={!sealed || busy}
+          style={{
+            background: !sealed || busy ? "#0E7E86" : "#3BD7E0",
+            color: "#07080A", fontFamily: sans, fontWeight: 600, fontSize: 14, padding: 15,
+            textAlign: "center", letterSpacing: "0.02em", border: "none",
+            cursor: !sealed || busy ? "default" : "pointer", marginTop: 18,
+          }}
         >
-          Seal &amp; broadcast →
-        </Link>
+          {busy ? "Broadcasting…" : "Seal & broadcast →"}
+        </button>
       </div>
     </div>
   );
