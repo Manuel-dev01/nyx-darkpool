@@ -5,7 +5,7 @@
 > starting a phase and to `DONE` (with the commit short-hash) after a phase compiles,
 > passes validation, and is committed.
 
-_Last updated: 2026-06-23 (Phase 4 — Soroban BN254 verifier verified)_
+_Last updated: 2026-06-25 (web frontend complete; Phase 5 IN PROGRESS)_
 
 ## Phase Ledger
 
@@ -15,12 +15,34 @@ _Last updated: 2026-06-23 (Phase 4 — Soroban BN254 verifier verified)_
 | 2     | Database Schema & Engine Boilerplate (Go/PG)  | DONE        | 26ca3ed |
 | 3     | ZK Circuit Construction (Circom + snarkjs)    | DONE        | 70bdafd |
 | 4     | Soroban Verifier Contract (Rust)              | DONE        | cf9b035 |
-| 5     | Off-Chain Engine Logic (Go matcher + proofs)  | PENDING     | —       |
+| 5     | Off-Chain Engine Logic (Go matcher + proofs)  | IN PROGRESS | —       |
 | 6     | Orchestration & Dockerization                 | PENDING     | —       |
 
 > Housekeeping commit `059ccac` (after Phase 2) replaced the empty-directory
 > `.gitkeep` placeholders with descriptive `README.md` files in `circuits/`,
 > `contracts/`, `docs/`, and `scripts/`.
+
+## Frontend Track (parallel to the manual's 6 phases)
+
+The Nyx brand + product UI was built as a **parallel initiative** (not one of CLAUDE.md's six
+numbered phases) and lives in `web/` — a **Next.js (App Router, TypeScript)** app. Status: **DONE
+(build-verified; backend logic pending)**.
+
+| Step | Description                                                              | Commit  |
+|------|--------------------------------------------------------------------------|---------|
+| F1   | Brand board + landing/app/directions from Claude Design (static HTML)    | a1a363b |
+| F2   | Convert the design deliverables into a Next.js app                       | cdc9a75 |
+| F3   | Make the landing interactive + build the `/app` product frontend         | 16b4899 |
+
+- **Surfaces:** `/` marketing landing (with the schematic "Four steps" settlement-path graph),
+  `/app/*` the interactive product frontend (access → desk → compose & seal → pool → proofs →
+  settled), and embedded design showcases `/brand-board` + `/directions`; `/deliverables` hub.
+- **Source of truth:** the four Claude Design canvases in `web/design-src/*.dc.html` (untouched);
+  the landing + app are real TSX, the showcases are rendered verbatim.
+- **Verified:** `next build` green — all routes prerender; `npm start` smoke test → every route 200.
+- **Not yet wired:** order matching / proof / settlement logic — the buttons and flow are real, the
+  **backend hooks land in Phase 5** (the engine work below). `web/README.md` documents the routes,
+  the trust/placeholder notes, and the deliberate landing swap.
 
 ## Repository State
 
@@ -148,6 +170,9 @@ The off-chain E2E verifies the proof with snarkjs; the `PHASE-4 HOOK` in
 - [x] **D** `74b1a86` `feat(engine)` — wire e2e PHASE-4 hook + deploy/e2e-onchain scripts
 - [x] **E** `c8865ac` `docs(status)` — Phase 4 done
 - [x] **F** `4d942f6` `fix(engine)` — stellar invoke arg format + tx-hash parsing (live-validated)
+- [x] **G** `3306f4f` `fix(scripts)` — pin Soroban **protocol 26** in `deploy_contract.sh` + RPC
+  self-check (a fresh run otherwise boots protocol 25 and fails contract upload); re-verified
+  end-to-end with a from-scratch `scripts/e2e_onchain.sh` deploy + on-chain `verify_and_settle`.
 - [x] **Live deploy + on-chain e2e run COMPLETE** — deployed to a local Soroban network
   (Docker quickstart, **protocol 26**) and the real Phase-3 proof verified live on-chain.
 

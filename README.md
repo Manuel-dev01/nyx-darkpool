@@ -10,8 +10,10 @@ Soroban contract verifies that proof on-chain (using Stellar Protocol 26's nativ
 host functions) before settling the asset swap atomically.
 
 > Status: **Phases 1–4 DONE** (workspace, Postgres engine, ZK circuit, on-chain Soroban
-> verifier — the real Phase-3 proof verifies live on-chain). **Phase 5 (concurrent matcher)
-> is next.** See [`STATUS.md`](./STATUS.md) for the live build ledger.
+> verifier — the real Phase-3 proof verifies live on-chain). The **`web/` frontend** (Next.js
+> landing + product app + brand showcases) is **done** as a parallel track.
+> **Phase 5 (concurrent matcher + proof routing → on-chain settlement) is IN PROGRESS.**
+> See [`STATUS.md`](./STATUS.md) for the live build ledger.
 
 ---
 
@@ -58,6 +60,7 @@ a succinct, verifiable proof of a fair match ever touches the chain.
 | `contracts/`  | Soroban / Rust (`#![no_std]`) | Pure on-chain Groth16 **verifier + settlement** using Protocol 26 BN254 host functions. Strict `require_auth`; graceful verification-failure handling. |
 | `engine/`     | Go 1.22+, PostgreSQL, `pgx` | Concurrent off-chain matcher. Ingests encrypted orders, matches under `Serializable` isolation, orchestrates proof generation, persists `proof_blob`. |
 | `scripts/`    | Bash                        | Circuit compilation, trusted setup, build/dev helpers.               |
+| `web/`        | Next.js (App Router), TypeScript | Brand + product frontend: interactive marketing landing, the `/app` product UI (access → desk → compose → pool → proofs → settled), and embedded brand showcases. Backend wiring lands in Phase 5. |
 | `docs/`       | Markdown                    | Architecture notes and protocol specs.                               |
 
 ### Cryptography
@@ -148,8 +151,13 @@ in [`CLAUDE.md`](./CLAUDE.md); live progress is tracked in [`STATUS.md`](./STATU
 2. **Database Schema & Engine Boilerplate** — Postgres migrations + Go scaffold ✅
 3. **ZK Circuit Construction** — `darkpool_match.circom` + trusted setup ✅ _(+ Go test/E2E hardening)_
 4. **Soroban Verifier Contract** — on-chain Groth16 verification + settlement ✅ _(verified live on-chain)_
-5. **Off-Chain Engine Logic** — concurrent matcher + proof routing _(next)_
+5. **Off-Chain Engine Logic** — concurrent matcher + proof routing → on-chain settlement _(in progress)_
 6. **Orchestration & Dockerization** — compose + Makefile
+
+**Frontend (parallel track, not one of the six phases):** the `web/` Next.js app — interactive
+landing + product frontend + brand showcases — is **done** (build-verified); its backend wiring
+arrives with Phase 5. See [`web/README.md`](./web/README.md) and the *Frontend Track* in
+[`STATUS.md`](./STATUS.md).
 
 ---
 
