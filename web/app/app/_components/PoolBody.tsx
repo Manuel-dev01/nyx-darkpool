@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Topbar } from "./Topbar";
-import { listOrders, type OrderSummary } from "../../_lib/engine";
-import { shortId, sideColor, activeOrderId } from "../../_lib/ui";
+import { listOrders, createOrder, type OrderSummary } from "../../_lib/engine";
+import { shortId, sideColor, activeOrderId, activeOrderMeta, demoMode } from "../../_lib/ui";
+import { loadDesk, signCommitment } from "../../_lib/desk";
+import { sealInts } from "../../_lib/seal";
 
 const mono = "'IBM Plex Mono', monospace";
 const sans = "'Archivo', sans-serif";
@@ -34,6 +36,7 @@ const CELLS = 80;
 export function PoolBody() {
   const [orders, setOrders] = useState<OrderSummary[] | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const filledRef = useRef(false);
 
   useEffect(() => {
     setActiveId(activeOrderId());
@@ -45,6 +48,46 @@ export function PoolBody() {
     tick();
     const id = setInterval(tick, 3000);
     return () => { alive = false; clearInterval(id); };
+  }, []);
+
+  // Demo-Mode auto-counterparty: after a grace period, if my order is still open
+  // and no real opposing order has appeared (race fallback for a 2nd tab/desk),
+  // inject ONE crossing counter — same pair/price/volume, opposite side, a fresh
+  // salt, signed by this desk — so a solo order can settle end-to-end.
+  useEffect(() => {
+    if (!demoMode()) return;
+    const meta = activeOrderMeta();
+    const desk = loadDesk();
+    if (!meta || !desk) return;
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      if (cancelled || filledRef.current) return;
+      try {
+        const all = await listOrders(100);
+        const mine = all.find((o) => o.id === meta.id);
+        if (!mine || mine.status !== "open") return; // a real counter already matched it
+        const opposingRests = all.some(
+          (o) => o.id !== meta.id && o.status === "open" && o.asset_pair === meta.pair && o.side !== meta.side,
+        );
+        if (opposingRests) return; // let the matcher pair the real orders
+        filledRef.current = true;
+        const counter = await sealInts(meta.priceInt, meta.volumeInt);
+        await createOrder({
+          pubkey: desk.publicKey,
+          asset_pair: meta.pair,
+          side: meta.side === "bid" ? "ask" : "bid",
+          price: counter.priceInt,
+          volume: counter.volumeInt,
+          salt: counter.salt,
+          commitment: counter.commitment,
+          nullifier: counter.nullifier,
+          signature: signCommitment(desk, counter.commitment),
+        });
+      } catch {
+        filledRef.current = false; // transient failure — allow a later attempt
+      }
+    }, 2500);
+    return () => { cancelled = true; clearTimeout(t); };
   }, []);
 
   const open = (orders ?? []).filter((o) => o.status === "open");

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { seal, type Sealed } from "../../_lib/seal";
 import { createOrder } from "../../_lib/engine";
 import { loadDesk, signCommitment } from "../../_lib/desk";
+import { setActiveOrder } from "../../_lib/ui";
 
 const mono = "'IBM Plex Mono', monospace";
 const sans = "'Archivo', sans-serif";
@@ -84,11 +85,15 @@ export function ComposeForm() {
         nullifier: sealed.nullifier,
         signature: signCommitment(desk, sealed.commitment),
       });
-      try {
-        localStorage.setItem("nyx.activeOrder", id);
-      } catch {
-        /* private mode / storage disabled — non-fatal */
-      }
+      // Persist the active order with its private integers so the demo-mode
+      // counterparty can mirror price/volume (which the API never returns).
+      setActiveOrder({
+        id,
+        side: side === "BID" ? "bid" : "ask",
+        pair: PAIR,
+        priceInt: sealed.priceInt,
+        volumeInt: sealed.volumeInt,
+      });
       router.push(`/app/pool?order=${encodeURIComponent(id)}`);
     } catch (e) {
       setSubmitErr(e instanceof Error ? e.message : String(e));

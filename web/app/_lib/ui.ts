@@ -43,15 +43,70 @@ export function priceFromInt(intStr: string): string {
   return (n / 10 ** PRICE_SCALE).toFixed(PRICE_SCALE);
 }
 
+/** The active order's locally-known details (the private integers stay client-side
+ * so the demo-mode counterparty can mirror them). */
+export interface ActiveOrder {
+  id: string;
+  side: "bid" | "ask";
+  pair: string;
+  priceInt: string;
+  volumeInt: string;
+}
+
+const ACTIVE_KEY = "nyx.activeOrder";
+
+/** Persist the active order (called at broadcast). Browser only. */
+export function setActiveOrder(o: ActiveOrder): void {
+  try {
+    window.localStorage.setItem(ACTIVE_KEY, JSON.stringify(o));
+  } catch {
+    /* storage disabled — non-fatal */
+  }
+}
+
+/** Read the active order's full meta, or null if absent / legacy bare-id value. */
+export function activeOrderMeta(): ActiveOrder | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(ACTIVE_KEY);
+    if (!raw) return null;
+    const o = JSON.parse(raw) as ActiveOrder;
+    return o && o.id ? o : null;
+  } catch {
+    return null; // legacy bare id (non-JSON)
+  }
+}
+
 /** Read the active order id from the URL (?order=) or localStorage. Browser only. */
 export function activeOrderId(): string | null {
   if (typeof window === "undefined") return null;
   const fromUrl = new URLSearchParams(window.location.search).get("order");
   if (fromUrl) return fromUrl;
+  const meta = activeOrderMeta();
+  if (meta) return meta.id;
   try {
-    return window.localStorage.getItem("nyx.activeOrder");
+    return window.localStorage.getItem(ACTIVE_KEY); // legacy bare id
   } catch {
     return null;
+  }
+}
+
+/** Demo-Mode (auto-fill counterparty) preference — default ON when unset. */
+export function demoMode(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const v = window.localStorage.getItem("nyx.demoMode");
+    return v === null ? true : v === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function setDemoMode(on: boolean): void {
+  try {
+    window.localStorage.setItem("nyx.demoMode", on ? "1" : "0");
+  } catch {
+    /* ignore */
   }
 }
 

@@ -65,13 +65,11 @@ export interface Sealed {
   nullifier: string; // decimal Poseidon(commitment,salt) — anti-replay token
 }
 
-/** Seal an order: returns the integer values + the Poseidon commitment and a
- * derived nullifier. priceHuman/sizeHuman are the raw form strings. */
-export async function seal(priceHuman: string, sizeHuman: string): Promise<Sealed> {
-  const priceInt = priceToInt(priceHuman);
-  const volumeInt = sizeToInt(sizeHuman);
+/** Seal from already-scaled integer strings (price ×100, raw volume). Generates
+ * a fresh salt and the matching Poseidon commitment + nullifier. Used both by
+ * seal() and by the demo-mode counterparty (which reuses the stored integers). */
+export async function sealInts(priceInt: string, volumeInt: string): Promise<Sealed> {
   const salt = randomSalt();
-
   const poseidon = await getPoseidon();
   const F = poseidon.F;
   const commitment = F.toObject(
@@ -80,6 +78,11 @@ export async function seal(priceHuman: string, sizeHuman: string): Promise<Seale
   const nullifier = F.toObject(
     poseidon([BigInt(commitment), BigInt(salt)]),
   ).toString();
-
   return { priceInt, volumeInt, salt, commitment, nullifier };
+}
+
+/** Seal an order: returns the integer values + the Poseidon commitment and a
+ * derived nullifier. priceHuman/sizeHuman are the raw form strings. */
+export async function seal(priceHuman: string, sizeHuman: string): Promise<Sealed> {
+  return sealInts(priceToInt(priceHuman), sizeToInt(sizeHuman));
 }
