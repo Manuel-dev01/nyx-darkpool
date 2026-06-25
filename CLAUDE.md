@@ -98,3 +98,64 @@ Execute the following steps sequentially. **Do not move to Step N+1 until Step N
 4. Final commit: `feat: complete end-to-end Nyx darkpool architecture`.
 
 Acknowledge this manual by creating the `STATUS.md` file, summarizing your strict operating directives, and automatically beginning Phase 1.
+
+---
+
+## 5. AS-BUILT IMPLEMENTATION NOTES & DEVIATIONS
+> Sections 1–4 above are the original directive. This section records how the system was
+> **actually built** so continuous sessions have accurate context. Where reality differs from
+> the directive, the as-built behavior here governs. Authoritative live state is in `STATUS.md`.
+
+### 5.1 Cryptography / on-chain
+- **Protocol 26 is REQUIRED (not "P25/26").** soroban-sdk 26.1 + the BN254 `g1_msm` host function
+  need ledger protocol ≥ 26. The wasm build target is **`wasm32v1-none`**.
+- **`verify_and_settle` signature has a leading `submitter: Address`** (the `require_auth` principal),
+  ahead of the proof args specified in §4: `verify_and_settle(env, submitter, proof_a: BytesN<64>,
+  proof_b: BytesN<128>, proof_c: BytesN<64>, public_inputs: Vec<BytesN<32>>) -> Result<(), Error>`.
+  The contract also exposes `is_settled` and a `settle_transfer` SAC seam.
+- **Anti-replay** is on-chain (a `Settled(BytesN<32>)` marker over the public inputs) **and** in the DB
+  (`orders.nullifier UNIQUE`, `matches` UNIQUE maker/taker). An in-circuit nullifier remains a
+  documented future extension.
+- **On-chain bridge = the `stellar` CLI via `os/exec`** (`engine/internal/onchain`), not CGO. It is
+  **env-gated**: unset `NYX_SOROBAN_CONTRACT_ID` ⇒ the matcher stops after storing `proof_blob`, so
+  offline `go test ./...` needs no network/contract.
+- **Deployments:** Phase 4/5 verified on a **local ephemeral** Docker network; Phase 5.1 deployed the
+  verifier to **public Stellar testnet** (protocol 27) and settled a real tx there (see `STATUS.md`
+  for the CID + stellar.expert links). Mainnet is out of scope (would need a real funded key).
+
+### 5.2 Engine (Go) — as built
+- **Packages:** `internal/order` (domain + `encrypted_blob` payload codec), `internal/store`
+  (atomic `CreateMatch` under SERIALIZABLE + proof/onchain writes + `match_id` on order list),
+  `internal/prove` (snarkjs witness→prove via `os/exec`, per-call temp dir), `internal/secret`
+  (at-rest AES-GCM), `internal/matcher` (concurrent match → prove → settle worker pool),
+  `internal/onchain` (the bridge above), plus `config`/`db`/`api`.
+- **At-rest encryption (Phase 5.1):** `orders.encrypted_blob` is sealed with **AES-256-GCM**
+  (`internal/secret`). Default is an **ephemeral key generated at startup** (encryption on, *no
+  secret written to disk*; orders don't survive a restart). Set **`NYX_BLOB_KEY`** (hex, 32 bytes)
+  to persist across restarts. `Open` falls back to legacy plaintext so old rows still read.
+- **Trust model:** the engine is the trusted off-chain prover/sequencer, so it handles raw
+  `price/volume/salt` in memory to match and prove. Privacy is **vs. the public chain/mempool**
+  (which only sees the commitment + proof), now reinforced at rest by encryption.
+- **HTTP API:** `GET /healthz`, `POST /orders`, `GET /orders` (carries `match_id`), `GET /matches/{id}`.
+- **DB:** migration **`000002_order_commitment`** added `orders.order_commitment` (Poseidon decimal
+  string = the circuit's `maker_hash`/`taker_hash`).
+- **Env inventory:** `NYX_DATABASE_URL`, `NYX_HTTP_ADDR`, `NYX_DB_MAX_CONNS`, `NYX_DB_CONNECT_TIMEOUT`,
+  `NYX_LOG_LEVEL`, `NYX_MATCHER_WORKERS`, `NYX_MATCHER_POLL_INTERVAL`, `NYX_CIRCUITS_ROOT`,
+  `NYX_SCRIPTS_ROOT`, `NYX_NODE_BIN`, `NYX_BLOB_KEY`, `NYX_SOROBAN_CONTRACT_ID`/`_NETWORK`/`_SOURCE`,
+  `NYX_STELLAR_BIN`.
+
+### 5.3 Frontend (`web/`) — parallel track, not one of the six phases
+- A **Next.js (App Router, TypeScript)** app: marketing landing `/` + the `/app` product frontend
+  (access → desk → compose → pool → proofs → settled) + embedded brand showcases.
+- **Wired to the engine (Phase 5.1):** the `/app` screens call the engine through a **Next rewrite
+  proxy** — client code fetches relative `/api/engine/*`, which `next.config.mjs` proxies to
+  `ENGINE_ORIGIN` (default `http://localhost:8080`). No CORS, no engine change.
+- **Compose computes a REAL Poseidon commitment** in the browser via **circomlibjs** (the same lib +
+  constants as `circuits/scripts/gen_input.js`), so a frontend-sealed order is genuinely provable.
+  Price is scaled ×100 (integer cents); a fresh random salt is generated per order.
+- Desk/Pool/Proofs/Settled are small `'use client'` islands polling `GET /orders` + `GET /matches/{id}`.
+  `scripts/seed_demo_orders.js` posts a crossing pair for a one-command demo.
+
+### 5.4 Build status
+Phases 1–5 + the frontend track are **DONE**; Phase 5.1 (encryption + FE wiring + public testnet) is
+**DONE**. **Phase 6 (Orchestration & Dockerization)** is the remaining numbered phase.

@@ -15,6 +15,11 @@ npm run dev      # http://localhost:3000
 npm run build && npm start
 ```
 
+The marketing landing needs nothing else. The **`/app` product screens read live data from the Go
+engine** through a proxy — start the engine (`../engine`, default `:8080`) and set `ENGINE_ORIGIN`
+if it runs elsewhere (`cp .env.example .env.local`). Without the engine, `/app` renders its
+loading/empty states.
+
 ## Routes
 
 | Route | Surface | Kind |
@@ -57,12 +62,36 @@ with a sidebar (`SideNav`, active-route highlight via `usePathname`) and a scrol
 The sign-in screen sits outside the shell (route group `(shell)`), so `/app/access` renders
 full-screen.
 
-Interactivity is kept to small `'use client'` islands — `SideNav` (active state) and `ComposeForm`
-(BID/ASK + GTC/IOC/1H toggles, controlled price/size inputs, live seal preview). Screens are
-otherwise Server Components. Navigational buttons use `<Link>` (e.g. **+ New** → compose,
-**Seal & broadcast** → pool, **Authenticate** → desk); genuinely-stateful actions are real
-`<button>`s that are **no-ops for now** (e.g. **Download receipt**) — the matching/proof/settlement
-**logic is intentionally not wired yet**. Demo flow:
+Each data screen is a small `'use client'` island: `SideNav` (active state), `ComposeForm`,
+`DeskBody`, `PoolBody`, `ProofsBody`, `SettledBody`. They are **wired to the Go engine** (see below)
+and poll live state; the shell/layout stays a Server Component.
+
+### Wired to the engine (Phase 5.1)
+
+- **Proxy, not CORS.** Client code only ever fetches relative `/api/engine/*`; `next.config.mjs`
+  rewrites that to **`ENGINE_ORIGIN`** (default `http://localhost:8080`). Works in `next dev` and
+  `next start`; the engine needs no CORS and stays private to the Next server. Copy `.env.example`
+  → `.env.local` to point at a different engine. The typed client is `app/_lib/engine.ts`.
+- **Compose seals for real.** `app/_lib/seal.ts` computes the **actual Poseidon commitment**
+  (`circomlibjs`, the same lib + constants as `circuits/scripts/gen_input.js`) over
+  `[price, volume, salt]`, so a frontend-sealed order is genuinely provable. **Price is scaled ×100**
+  (2 decimals → integer cents) and size separators are stripped, to match the engine's base-10
+  integer domain; a fresh random salt is generated per order. "Seal & broadcast" `POST`s `/orders`,
+  stores the returned id in `localStorage`, and routes to `/app/pool?order=<id>`.
+- **Live screens poll.** Desk renders `GET /orders` (counts + table + activity); Pool shows the open
+  commitments as the lattice + your active order; Proofs/Settled follow the active order's `match_id`
+  → `GET /matches/{id}` to drive the pipeline and show the on-chain status + a **stellar.expert
+  testnet** link for the settlement tx. Price/size are never returned by the API (they stay sealed).
+
+### Demo flow
+
+A full settle needs a **crossing counter-order** (ask.price ≤ bid.price, equal volume). Either
+compose an **ASK then a BID** that cross via the UI, or run the one-command seeder:
+
+```bash
+# 1. engine + Postgres running (see ../engine/README.md); 2. then:
+node ../scripts/seed_demo_orders.js          # posts a crossing pair → matcher pairs/proves/settles
+```
 
 ```
 /  →  Enter the pool  →  /app/access  →  Authenticate  →  /app (Desk)
@@ -79,16 +108,21 @@ web/
 │   ├── page.tsx                # /  → interactive landing (with the schematic swap)
 │   ├── _components/Eclipse.tsx # the eclipse mark, reused across landing + app
 │   ├── _lib/design.tsx         # <Design/> — verbatim render for the embedded showcases
+│   ├── _lib/engine.ts          # typed client for the engine API (/api/engine/*)
+│   ├── _lib/seal.ts            # in-browser Poseidon commitment (circomlibjs) + value scaling
+│   ├── _lib/ui.ts              # small shared formatters + active-order helper
 │   ├── _content/{brand-board,directions}.html   # the embedded showcase bodies
 │   ├── brand-board/page.tsx · directions/page.tsx · deliverables/page.tsx
 │   └── app/
-│       ├── _components/{SideNav,Topbar,ComposeForm}.tsx
+│       ├── _components/{SideNav,Topbar,ComposeForm,DeskBody,PoolBody,ProofsBody,SettledBody}.tsx
 │       ├── access/page.tsx     # /app/access (full-screen, outside the shell)
 │       └── (shell)/            # product shell route group
 │           ├── layout.tsx      # sidebar + content frame
 │           ├── page.tsx        # /app (Desk)
 │           └── {compose,pool,proofs,settled,positions}/page.tsx
 ├── design-src/                 # the 4 Claude Design canvases — SOURCE OF TRUTH, do not edit
+├── types/circomlibjs.d.ts      # ambient types for circomlibjs (ships none)
+├── .env.example                # ENGINE_ORIGIN for the /api/engine proxy
 ├── next.config.mjs · tsconfig.json · package.json
 └── README.md
 ```
@@ -114,6 +148,7 @@ web/
 ## Notes & placeholders
 
 - `CONTACT` mailto in `app/page.tsx` and the **Positions** screen are placeholders.
-- The product UI is presentational; **order matching, proof generation, and settlement logic are
-  not wired** — the buttons and flow are real, the backend hooks come next.
+- The `/app` screens are **wired to the engine** (orders → matching → proof → on-chain settlement).
+  The **access** sign-in is still cosmetic (no real auth), **Download receipt** is a no-op, and
+  price/size are scaled/sealed client-side — see *Wired to the engine* above.
 - `design-src/` is authoritative; the embedded showcases under `app/_content/` are derived.

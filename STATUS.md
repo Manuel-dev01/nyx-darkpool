@@ -5,7 +5,7 @@
 > starting a phase and to `DONE` (with the commit short-hash) after a phase compiles,
 > passes validation, and is committed.
 
-_Last updated: 2026-06-25 (Phase 5.1 — at-rest encryption + frontend wiring + public testnet — IN PROGRESS)_
+_Last updated: 2026-06-25 (Phase 5.1 — at-rest encryption + frontend wiring + public testnet — DONE)_
 
 ## Phase Ledger
 
@@ -16,7 +16,7 @@ _Last updated: 2026-06-25 (Phase 5.1 — at-rest encryption + frontend wiring + 
 | 3     | ZK Circuit Construction (Circom + snarkjs)    | DONE        | 70bdafd |
 | 4     | Soroban Verifier Contract (Rust)              | DONE        | cf9b035 |
 | 5     | Off-Chain Engine Logic (Go matcher + proofs)  | DONE        | 3931aa2 |
-| 5.1   | At-rest encryption + frontend wiring + testnet | IN PROGRESS | —       |
+| 5.1   | At-rest encryption + frontend wiring + testnet | DONE        | 5190040 |
 | 6     | Orchestration & Dockerization                 | PENDING     | —       |
 
 > **Phase 5.1** closes the honest notes from Phase 5: (A) AES-256-GCM **at-rest encryption** of the
@@ -24,6 +24,30 @@ _Last updated: 2026-06-25 (Phase 5.1 — at-rest encryption + frontend wiring + 
 > engine API (real Poseidon commitment → live order/match screens); (C) a **public testnet** deploy
 > of the verifier so the contract + settlement tx are browsable on stellar.expert (the Phase-5
 > on-chain run was on a local ephemeral network). Plus a CLAUDE.md/READMEs as-built sync.
+
+### Phase 5.1 — verification evidence (2026-06-25)
+**Commits:** `f658ae4` (open) · `05b5aa1` (encryption) · `0e9c137` + `b71da63` + `5190040` (FE wiring)
+· `dd73326` (testnet preflight) · docs (this).
+
+- **At-rest encryption (`internal/secret`, AES-256-GCM):** offline `go test ./...` + `-race` green;
+  integration test `TestEncryptedBlobIsCiphertext` asserts the raw `encrypted_blob` is **ciphertext**
+  (not valid JSON) yet the matcher still decrypts and matches. Live smoke: `SELECT encrypted_blob`
+  showed the `NYX1` magic prefix + binary body. Default key is **ephemeral** (no secret on disk);
+  `NYX_BLOB_KEY` persists across restarts. **PASS.**
+- **Frontend ⇄ engine (full observable flow):** `next build` green (all 14 routes static islands).
+  Live smoke: engine on `:8080` + `next start` on `:3000` → composing/seeding a crossing pair → the
+  browser's relative `/api/engine/*` proxied to the engine returned the live matched orders; the
+  **browser-computed Poseidon commitment exactly equals `gen_input.js`** (verified:
+  `7440473553369986675637128923308304686069855711795512973251536680399749149066`), so a
+  frontend-sealed order is genuinely provable (`GET /matches/{id}` → `has_proof: true`). **PASS.**
+- **Public testnet deploy (protocol 27):** `NYX_SOROBAN_NETWORK=testnet bash scripts/deploy_contract.sh`
+  → contract **`CBAFC6W5IWQC5AB6LFMFI4KB4DZT23BU2O2AJ2H3B2727DO37DOJGJRV`**, deployer/submitter
+  **`GAW2WLHI5YHCE7FMB4TB7MLE2RIKQGOTPMC2NV66KKFTX6LGYMNT3YRK`** (friendbot-funded — no real value).
+  The matcher's auto-settle drove a real `verify_and_settle` → tx
+  **`b78e514e0f2b4078218ab12627a5d260f9895943ef64b60e5040b55df1d4a10e`** (RPC `getTransaction` =
+  **SUCCESS**, ledger 3273424). **PASS.**
+  - Contract: <https://stellar.expert/explorer/testnet/contract/CBAFC6W5IWQC5AB6LFMFI4KB4DZT23BU2O2AJ2H3B2727DO37DOJGJRV>
+  - Settlement tx: <https://stellar.expert/explorer/testnet/tx/b78e514e0f2b4078218ab12627a5d260f9895943ef64b60e5040b55df1d4a10e>
 
 > Housekeeping commit `059ccac` (after Phase 2) replaced the empty-directory
 > `.gitkeep` placeholders with descriptive `README.md` files in `circuits/`,
@@ -47,9 +71,10 @@ numbered phases) and lives in `web/` — a **Next.js (App Router, TypeScript)** 
 - **Source of truth:** the four Claude Design canvases in `web/design-src/*.dc.html` (untouched);
   the landing + app are real TSX, the showcases are rendered verbatim.
 - **Verified:** `next build` green — all routes prerender; `npm start` smoke test → every route 200.
-- **Not yet wired:** order matching / proof / settlement logic — the buttons and flow are real, the
-  **backend hooks land in Phase 5** (the engine work below). `web/README.md` documents the routes,
-  the trust/placeholder notes, and the deliberate landing swap.
+- **Wired to the engine (Phase 5.1):** the `/app` screens now call the engine via a Next rewrite
+  proxy (`/api/engine/*` → `ENGINE_ORIGIN`). Compose seals a **real Poseidon commitment** (circomlibjs)
+  and `POST`s `/orders`; Desk/Pool/Proofs/Settled poll `GET /orders` + `GET /matches/{id}` for live
+  match/proof/settlement state. `web/README.md` documents the routes, the wiring, and the demo flow.
 
 ## Repository State
 

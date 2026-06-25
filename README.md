@@ -9,11 +9,13 @@ that a maker and taker order legitimately intersect at a valid price and volume;
 Soroban contract verifies that proof on-chain (using Stellar Protocol 26's native BN254
 host functions) before settling the asset swap atomically.
 
-> Status: **Phases 1–5 DONE** — workspace, Postgres engine, ZK circuit, on-chain Soroban
-> verifier, and the **off-chain matcher** (concurrent pairing → Groth16 proof → on-chain
-> `verify_and_settle`, verified live end-to-end). The **`web/` frontend** (Next.js landing +
-> product app + brand showcases) is done as a parallel track. **Phase 6 (orchestration &
-> Dockerization) is next.** See [`STATUS.md`](./STATUS.md) for the live build ledger.
+> Status: **Phases 1–5 + 5.1 DONE** — workspace, Postgres engine, ZK circuit, on-chain Soroban
+> verifier, the **off-chain matcher** (concurrent pairing → Groth16 proof → on-chain
+> `verify_and_settle`), **at-rest AES-256-GCM encryption** of the order blob, the **`web/` frontend
+> wired to the engine** (real in-browser Poseidon commitment → live order/proof/settlement screens),
+> and a **public Stellar testnet** deployment of the verifier (settlement tx browsable on
+> stellar.expert). **Phase 6 (orchestration & Dockerization) is next.** See
+> [`STATUS.md`](./STATUS.md) for the live build ledger, contract id, and explorer links.
 
 ---
 
@@ -60,7 +62,7 @@ a succinct, verifiable proof of a fair match ever touches the chain.
 | `contracts/`  | Soroban / Rust (`#![no_std]`) | Pure on-chain Groth16 **verifier + settlement** using Protocol 26 BN254 host functions. Strict `require_auth`; graceful verification-failure handling. |
 | `engine/`     | Go 1.22+, PostgreSQL, `pgx` | Concurrent off-chain matcher. Ingests encrypted orders, matches under `Serializable` isolation, orchestrates proof generation, persists `proof_blob`. |
 | `scripts/`    | Bash                        | Circuit compilation, trusted setup, build/dev helpers.               |
-| `web/`        | Next.js (App Router), TypeScript | Brand + product frontend: interactive marketing landing, the `/app` product UI (access → desk → compose → pool → proofs → settled), and embedded brand showcases. Backend wiring lands in Phase 5. |
+| `web/`        | Next.js (App Router), TypeScript | Brand + product frontend: interactive marketing landing, the `/app` product UI (access → desk → compose → pool → proofs → settled), and embedded brand showcases. **Wired to the engine** via a `/api/engine` proxy; Compose computes a real Poseidon commitment (circomlibjs) and the screens poll live order/match state. |
 | `docs/`       | Markdown                    | Architecture notes and protocol specs.                               |
 
 ### Cryptography
@@ -74,6 +76,9 @@ a succinct, verifiable proof of a fair match ever touches the chain.
   wraparound). Double-match/replay is prevented by the DB (`orders.nullifier UNIQUE`,
   `matches` UNIQUE maker/taker) and on-chain (the verifier records settled commitments and
   rejects replays). An in-circuit nullifier is a documented future extension.
+- **Privacy at rest:** the order's raw `price/volume/salt` (which the trusted off-chain prover
+  needs) are stored **AES-256-GCM-encrypted** in `orders.encrypted_blob`. The engine encrypts by
+  default with an **ephemeral key** (no secret written to disk); set `NYX_BLOB_KEY` to persist.
 
 ---
 
@@ -152,12 +157,14 @@ in [`CLAUDE.md`](./CLAUDE.md); live progress is tracked in [`STATUS.md`](./STATU
 3. **ZK Circuit Construction** — `darkpool_match.circom` + trusted setup ✅ _(+ Go test/E2E hardening)_
 4. **Soroban Verifier Contract** — on-chain Groth16 verification + settlement ✅ _(verified live on-chain)_
 5. **Off-Chain Engine Logic** — concurrent matcher + proof routing → on-chain settlement ✅ _(verified end-to-end)_
+   - **5.1** At-rest blob encryption + frontend↔engine wiring + **public testnet deploy** ✅ _(settlement tx live on stellar.expert)_
 6. **Orchestration & Dockerization** — compose + Makefile _(next)_
 
 **Frontend (parallel track, not one of the six phases):** the `web/` Next.js app — interactive
-landing + product frontend + brand showcases — is **done** (build-verified); its backend wiring
-arrives with Phase 5. See [`web/README.md`](./web/README.md) and the *Frontend Track* in
-[`STATUS.md`](./STATUS.md).
+landing + product frontend + brand showcases — is **done** and, as of Phase 5.1, **wired to the
+engine** (real in-browser Poseidon commitment → `POST /orders`; Desk/Pool/Proofs/Settled poll live
+match state via a `/api/engine` proxy). See [`web/README.md`](./web/README.md) and the *Frontend
+Track* in [`STATUS.md`](./STATUS.md).
 
 ---
 

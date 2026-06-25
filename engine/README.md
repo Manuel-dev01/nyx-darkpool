@@ -14,6 +14,7 @@ engine/
 │   ├── db/              # pgxpool wrapper + SERIALIZABLE transaction helper
 │   ├── order/           # order domain type + encrypted_blob payload (price/volume/salt) codec
 │   ├── store/           # data-access layer: open-orders scan, atomic CreateMatch, proof/onchain writes
+│   ├── secret/          # at-rest AES-256-GCM encryption for encrypted_blob (ephemeral key by default)
 │   ├── prove/           # snarkjs proof generator (witness → groth16 prove) via os/exec, per-call temp dir
 │   ├── api/             # HTTP surface: /healthz, POST /orders, GET /orders, GET /matches/{id}
 │   ├── matcher/         # Phase 5: concurrent worker pool — match → prove → on-chain settle
@@ -38,9 +39,10 @@ poll loop (ticker)                     worker pool ×N (CPU-bound proving)
 - **Crash-safe proving:** matches are dispatched by scanning `proof_blob IS NULL`, so a proof
   interrupted by shutdown is simply retried next tick — nothing is lost to an in-memory queue.
 - **Trust model:** the engine is the off-chain prover, so the order's raw `price/volume/salt` live
-  in `orders.encrypted_blob` (plaintext-at-rest for now; encrypting at rest is a documented seam).
-  The public chain/mempool only ever sees the commitment + proof. A lying client whose commitment
-  ≠ `Poseidon(price,volume,salt)` simply produces an unprovable order (witness calc fails).
+  in `orders.encrypted_blob` — now **AES-256-GCM encrypted at rest** (`internal/secret`), so a DB
+  dump leaks nothing. The engine handles raw values only in memory to match and prove; the public
+  chain/mempool only ever sees the commitment + proof. A lying client whose commitment ≠
+  `Poseidon(price,volume,salt)` simply produces an unprovable order (witness calc fails).
 - **Proving optional:** if the circuit isn't compiled (`circuits/build/` artifacts absent), the
   engine still runs and matches orders; proofs are skipped (matches stay unproven) until built.
 
@@ -74,6 +76,13 @@ Enums: `order_status (open|matched|settled|cancelled)`, `order_side (bid|ask)`,
 | `NYX_CIRCUITS_ROOT`      | `../circuits`                                             | wasm/zkey/vkey + node_modules for proving |
 | `NYX_SCRIPTS_ROOT`       | `../scripts`                                              | `proof_to_bytes.js` (proof → BN254 bytes) |
 | `NYX_NODE_BIN`           | `node`                                                   | Node.js binary driving snarkjs   |
+| `NYX_BLOB_KEY`           | _(unset → ephemeral key)_                                | hex AES-256 key (32 bytes) for at-rest `encrypted_blob` encryption |
+
+**At-rest encryption.** `orders.encrypted_blob` is sealed with AES-256-GCM (`internal/secret`).
+When `NYX_BLOB_KEY` is unset the engine generates an **ephemeral key at startup** — encryption is on
+and *no secret is written to disk*, but orders cannot be decrypted after a restart (a startup
+`WARN` says so). Set `NYX_BLOB_KEY` to a 64-hex-char (32-byte) key to persist across restarts.
+Decryption falls back to plaintext for legacy rows written before encryption existed.
 
 The on-chain settlement leg additionally reads `NYX_SOROBAN_CONTRACT_ID` (+ `_NETWORK`,
 `_SOURCE`, `NYX_STELLAR_BIN`) — see *On-chain settlement bridge* below; unset ⇒ the matcher
@@ -84,7 +93,7 @@ stops after storing `proof_blob`.
 | Method & path        | Purpose                                                                 |
 |----------------------|-------------------------------------------------------------------------|
 | `POST /orders`       | Submit a sealed order: `{pubkey, asset_pair, side, price, volume, salt, commitment, nullifier}` → `201 {id}`. `409` on nullifier reuse, `400` on bad input. |
-| `GET /orders`        | List recent orders (no private values); `?limit=` (default 100).        |
+| `GET /orders`        | List recent orders (no private values); `?limit=` (default 100). Each row carries `match_id` once the order is paired (for frontend order→match polling). |
 | `GET /matches/{id}`  | Read a match: maker/taker ids, `has_proof`, `onchain_status`, `settlement_tx`. |
 
 `price/volume/salt` are base-10 integer strings; the client computes its own `commitment`
