@@ -39,14 +39,23 @@ log() { echo ">> $*" >&2; }
 # 1. Network: for local, start the Docker quickstart container (idempotent).
 #    Protocol MUST be >= 26 — soroban-sdk 26.1 wasm + the BN254 g1_msm host
 #    function require it; the quickstart default (protocol 25) fails the upload.
+#    Public testnet already runs protocol >= 27, but we still preflight it so a
+#    too-old network fails loudly here rather than mid-deploy.
 SOROBAN_PROTOCOL="${NYX_SOROBAN_PROTOCOL:-26}"
-RPC_URL="${NYX_SOROBAN_RPC_URL:-http://localhost:8000/rpc}"
 if [ "$NETWORK" = "local" ]; then
+    RPC_URL="${NYX_SOROBAN_RPC_URL:-http://localhost:8000/rpc}"
     log "starting local Soroban network (Docker quickstart, protocol $SOROBAN_PROTOCOL)…"
     "$STELLAR" container start local --protocol-version "$SOROBAN_PROTOCOL" >&2 2>&1 \
         || log "container already running (continuing)"
+elif [ "$NETWORK" = "testnet" ]; then
+    RPC_URL="${NYX_SOROBAN_RPC_URL:-https://soroban-testnet.stellar.org}"
+else
+    RPC_URL="${NYX_SOROBAN_RPC_URL:-}"
+fi
 
-    # Verify the live network actually runs protocol >= 26, else fail loudly.
+# Verify the target network runs protocol >= 26 (for local + testnet). Skipped
+# only when no RPC URL is known (custom networks supply NYX_SOROBAN_RPC_URL).
+if [ -n "$RPC_URL" ]; then
     pv=""
     for _ in $(seq 1 20); do
         pv="$(curl -fsS -m 5 -X POST "$RPC_URL" -H 'Content-Type: application/json' \
@@ -56,13 +65,15 @@ if [ "$NETWORK" = "local" ]; then
         sleep 3
     done
     if [ -z "$pv" ] || [ "$pv" -lt 26 ]; then
-        log "ERROR: local network protocol is '${pv:-unreachable}', need >= 26."
-        log "  A protocol-25 container is likely already running. Reset it with:"
-        log "    \"$STELLAR\" container stop local && docker rm -f stellar-local"
-        log "  then re-run this script."
+        log "ERROR: $NETWORK protocol is '${pv:-unreachable}' at $RPC_URL, need >= 26."
+        if [ "$NETWORK" = "local" ]; then
+            log "  A protocol-25 container is likely already running. Reset it with:"
+            log "    \"$STELLAR\" container stop local && docker rm -f stellar-local"
+            log "  then re-run this script."
+        fi
         exit 1
     fi
-    log "local network protocol $pv OK"
+    log "$NETWORK network protocol $pv OK"
 fi
 
 # 2. Identity: create + fund if absent.
