@@ -7,6 +7,7 @@
 package config
 
 import (
+	"encoding/hex"
 	"fmt"
 	"os"
 	"runtime"
@@ -49,6 +50,12 @@ type Config struct {
 
 	// NodeBin is the Node.js binary used to drive snarkjs.
 	NodeBin string
+
+	// BlobKey is the hex-encoded AES-256 key (32 bytes → 64 hex chars) used to
+	// encrypt orders.encrypted_blob at rest. Optional: when empty the engine
+	// generates an ephemeral key at startup (encryption on, but orders do not
+	// survive a restart). Set NYX_BLOB_KEY to persist across restarts.
+	BlobKey string
 }
 
 // maxDefaultWorkers caps the auto-detected worker count so a high-core host
@@ -70,6 +77,7 @@ func Load() (*Config, error) {
 		CircuitsRoot:        getenv("NYX_CIRCUITS_ROOT", "../circuits"),
 		ScriptsRoot:         getenv("NYX_SCRIPTS_ROOT", "../scripts"),
 		NodeBin:             getenv("NYX_NODE_BIN", "node"),
+		BlobKey:             os.Getenv("NYX_BLOB_KEY"),
 	}
 
 	if v := os.Getenv("NYX_DB_MAX_CONNS"); v != "" {
@@ -108,7 +116,28 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("config: NYX_DATABASE_URL is required")
 	}
 
+	// When set, NYX_BLOB_KEY must be a 32-byte (AES-256) key, hex-encoded.
+	if cfg.BlobKey != "" {
+		b, err := hex.DecodeString(cfg.BlobKey)
+		if err != nil {
+			return nil, fmt.Errorf("config: NYX_BLOB_KEY must be hex-encoded: %w", err)
+		}
+		if len(b) != 32 {
+			return nil, fmt.Errorf("config: NYX_BLOB_KEY must decode to 32 bytes (64 hex chars), got %d", len(b))
+		}
+	}
+
 	return cfg, nil
+}
+
+// BlobKeyBytes returns the decoded NYX_BLOB_KEY, or nil when unset. Load has
+// already validated length/encoding, so the decode here cannot fail.
+func (c *Config) BlobKeyBytes() []byte {
+	if c.BlobKey == "" {
+		return nil
+	}
+	b, _ := hex.DecodeString(c.BlobKey)
+	return b
 }
 
 // defaultWorkers picks a sensible worker-pool size: the CPU count, capped so a

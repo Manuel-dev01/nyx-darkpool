@@ -27,6 +27,7 @@ import (
 	"github.com/nyx-darkpool/engine/internal/matcher"
 	"github.com/nyx-darkpool/engine/internal/onchain"
 	"github.com/nyx-darkpool/engine/internal/prove"
+	"github.com/nyx-darkpool/engine/internal/secret"
 	"github.com/nyx-darkpool/engine/internal/store"
 )
 
@@ -63,8 +64,26 @@ func run() error {
 	}
 	defer database.Close()
 
+	// --- At-rest blob encryption -----------------------------------------
+	// Encrypt orders.encrypted_blob at rest so a DB dump leaks nothing. With
+	// NYX_BLOB_KEY set we use that persistent key; otherwise an ephemeral key is
+	// generated in-memory (no secret on disk) — encryption is on by default, but
+	// orders won't decode after a restart. crypto/rand failure is fatal.
+	var blobCipher *secret.Cipher
+	if k := cfg.BlobKeyBytes(); k != nil {
+		if blobCipher, err = secret.New(k); err != nil {
+			return err
+		}
+		logger.Info("at-rest blob encryption enabled (persistent NYX_BLOB_KEY)")
+	} else {
+		if blobCipher, err = secret.NewEphemeral(); err != nil {
+			return err
+		}
+		logger.Warn("at-rest blob encryption using an EPHEMERAL key — orders will not survive a restart; set NYX_BLOB_KEY to persist")
+	}
+
 	// --- Data access + proof/on-chain dependencies -----------------------
-	st := store.New(database)
+	st := store.New(database, blobCipher)
 
 	// The proof generator needs the compiled circuit artifacts. If they're
 	// absent the engine still runs and matches orders; proofs are just skipped

@@ -11,7 +11,7 @@ func clearEnv(t *testing.T) {
 	t.Helper()
 	for _, k := range []string{
 		"NYX_DATABASE_URL", "NYX_HTTP_ADDR", "NYX_LOG_LEVEL",
-		"NYX_DB_MAX_CONNS", "NYX_DB_CONNECT_TIMEOUT",
+		"NYX_DB_MAX_CONNS", "NYX_DB_CONNECT_TIMEOUT", "NYX_BLOB_KEY",
 	} {
 		t.Setenv(k, "")
 	}

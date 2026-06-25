@@ -19,6 +19,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/nyx-darkpool/engine/internal/db"
 	"github.com/nyx-darkpool/engine/internal/order"
+	"github.com/nyx-darkpool/engine/internal/secret"
 )
 
 // Sentinel errors callers branch on.
@@ -35,11 +36,14 @@ var (
 
 // Store wraps the connection pool with typed order/match operations.
 type Store struct {
-	db *db.DB
+	db     *db.DB
+	cipher *secret.Cipher // at-rest encryption for encrypted_blob; nil => plaintext
 }
 
-// New constructs a Store over the given database handle.
-func New(d *db.DB) *Store { return &Store{db: d} }
+// New constructs a Store over the given database handle. The optional cipher
+// encrypts/decrypts orders.encrypted_blob at rest; pass nil to store plaintext
+// (a nil *secret.Cipher passes data through unchanged).
+func New(d *db.DB, cipher *secret.Cipher) *Store { return &Store{db: d, cipher: cipher} }
 
 // InsertParams describes a new order. Commitment is the client-sealed Poseidon
 // hash; Payload holds the raw values the engine needs to match and prove.
@@ -57,10 +61,11 @@ type InsertParams struct {
 // InsertOrder stores a new resting order and returns its id. A nullifier
 // collision surfaces as ErrDuplicate.
 func (s *Store) InsertOrder(ctx context.Context, p InsertParams) (string, error) {
-	blob, err := order.Encode(p.Payload)
+	plain, err := order.Encode(p.Payload)
 	if err != nil {
 		return "", err
 	}
+	blob := s.cipher.Seal(plain) // at-rest encryption (no-op when cipher is nil)
 	priceHash := orDefault(p.PriceHash, p.Commitment)
 	volumeHash := orDefault(p.VolumeHash, p.Commitment)
 
@@ -128,7 +133,7 @@ func (s *Store) OpenOrdersByPair(ctx context.Context, pair string) ([]order.Orde
 		if o.Commitment == "" {
 			continue
 		}
-		payload, err := order.Decode(blob)
+		payload, err := s.decodeBlob(blob)
 		if err != nil {
 			continue
 		}
@@ -219,12 +224,22 @@ func (s *Store) orderByID(ctx context.Context, id string) (order.Order, error) {
 		return o, fmt.Errorf("store: order by id: %w", err)
 	}
 	o.Side = order.Side(side)
-	payload, err := order.Decode(blob)
+	payload, err := s.decodeBlob(blob)
 	if err != nil {
 		return o, err
 	}
 	o.Payload = payload
 	return o, nil
+}
+
+// decodeBlob reverses InsertOrder's encoding: decrypt at rest (no-op when the
+// cipher is nil or the row is legacy plaintext), then JSON-decode the payload.
+func (s *Store) decodeBlob(blob []byte) (order.Payload, error) {
+	plain, err := s.cipher.Open(blob)
+	if err != nil {
+		return order.Payload{}, err
+	}
+	return order.Decode(plain)
 }
 
 // SetProof stores the serialized Groth16 proof for a match.

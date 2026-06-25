@@ -8,6 +8,7 @@
 package matcher
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -22,6 +23,7 @@ import (
 	"github.com/nyx-darkpool/engine/internal/onchain"
 	"github.com/nyx-darkpool/engine/internal/order"
 	"github.com/nyx-darkpool/engine/internal/prove"
+	"github.com/nyx-darkpool/engine/internal/secret"
 	"github.com/nyx-darkpool/engine/internal/store"
 )
 
@@ -39,7 +41,13 @@ func testDB(t *testing.T) (*db.DB, *store.Store) {
 	}
 	t.Cleanup(d.Close)
 	applyMigrations(t, d)
-	return d, store.New(d)
+	// Use a real (ephemeral) cipher so the integration path exercises at-rest
+	// encryption end to end — orders are sealed on insert and opened on read.
+	cipher, err := secret.NewEphemeral()
+	if err != nil {
+		t.Fatalf("cipher: %v", err)
+	}
+	return d, store.New(d, cipher)
 }
 
 func repoRoot(t *testing.T) string {
@@ -282,13 +290,49 @@ func TestProofPipelineOnchain(t *testing.T) {
 	t.Logf("on-chain auto-settle confirmed (tx=%s)", tx)
 }
 
+// TestEncryptedBlobIsCiphertext: an order seeded through the normal InsertOrder
+// path is stored as ciphertext (the raw encrypted_blob is NOT valid JSON), yet
+// the store still decrypts it on read — proving at-rest encryption is active and
+// transparent to the matcher.
+func TestEncryptedBlobIsCiphertext(t *testing.T) {
+	ctx := context.Background()
+	d, st := testDB(t)
+
+	id := seed(t, st, "USDC/TBILL", order.Ask, "9984", "5000000", "c-enc")
+
+	// Raw column bytes must be ciphertext: not valid JSON, and not containing the
+	// cleartext value "9984".
+	var raw []byte
+	if err := d.Pool.QueryRow(ctx, `SELECT encrypted_blob FROM orders WHERE id=$1`, id).Scan(&raw); err != nil {
+		t.Fatal(err)
+	}
+	if json.Valid(raw) {
+		t.Fatal("encrypted_blob is valid JSON — at rest it should be ciphertext")
+	}
+	if bytes.Contains(raw, []byte("9984")) {
+		t.Fatal("encrypted_blob contains the cleartext price — not encrypted")
+	}
+
+	// Round-trip through the store: the matcher path decrypts transparently.
+	orders, err := st.OpenOrdersByPair(ctx, "USDC/TBILL")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(orders) != 1 {
+		t.Fatalf("OpenOrdersByPair = %d orders, want 1", len(orders))
+	}
+	if orders[0].Payload.Price != "9984" || orders[0].Payload.Volume != "5000000" {
+		t.Fatalf("decrypted payload mismatch: %+v", orders[0].Payload)
+	}
+}
+
 // --- helpers for the proof test ------------------------------------------------
 
 type sampleInput struct {
-	MakerHash, TakerHash               string
-	MakerPrice, TakerPrice             string
-	MakerVolume, TakerVolume           string
-	MakerSalt, TakerSalt               string
+	MakerHash, TakerHash     string
+	MakerPrice, TakerPrice   string
+	MakerVolume, TakerVolume string
+	MakerSalt, TakerSalt     string
 }
 
 func genValidInput(t *testing.T, root string) sampleInput {
