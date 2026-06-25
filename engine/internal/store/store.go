@@ -295,6 +295,8 @@ func (s *Store) GetMatch(ctx context.Context, id string) (Match, error) {
 }
 
 // OrderSummary is a read view of an order for the API (no private payload).
+// MatchID is the settlement record this order belongs to once matched (empty
+// while open), so the frontend can follow an order into its proof/settlement.
 type OrderSummary struct {
 	ID         string    `json:"id"`
 	Pubkey     string    `json:"pubkey"`
@@ -302,14 +304,20 @@ type OrderSummary struct {
 	Side       string    `json:"side"`
 	Commitment string    `json:"commitment"`
 	Status     string    `json:"status"`
+	MatchID    string    `json:"match_id,omitempty"`
 	CreatedAt  time.Time `json:"created_at"`
 }
 
-// ListOrders returns the most recent orders (no private values), capped at limit.
+// ListOrders returns the most recent orders (no private values), capped at
+// limit. It LEFT JOINs matches so each order carries its match_id once paired.
 func (s *Store) ListOrders(ctx context.Context, limit int) ([]OrderSummary, error) {
 	rows, err := s.db.Pool.Query(ctx,
-		`SELECT id, pubkey, asset_pair, side, COALESCE(order_commitment,''), status, created_at
-		   FROM orders ORDER BY created_at DESC LIMIT $1`, limit)
+		`SELECT o.id, o.pubkey, o.asset_pair, o.side, COALESCE(o.order_commitment,''),
+		        o.status, COALESCE(m.id::text,''), o.created_at
+		   FROM orders o
+		   LEFT JOIN matches m
+		     ON m.maker_order_id = o.id OR m.taker_order_id = o.id
+		  ORDER BY o.created_at DESC LIMIT $1`, limit)
 	if err != nil {
 		return nil, fmt.Errorf("store: list orders: %w", err)
 	}
@@ -317,7 +325,7 @@ func (s *Store) ListOrders(ctx context.Context, limit int) ([]OrderSummary, erro
 	out := []OrderSummary{}
 	for rows.Next() {
 		var o OrderSummary
-		if err := rows.Scan(&o.ID, &o.Pubkey, &o.AssetPair, &o.Side, &o.Commitment, &o.Status, &o.CreatedAt); err != nil {
+		if err := rows.Scan(&o.ID, &o.Pubkey, &o.AssetPair, &o.Side, &o.Commitment, &o.Status, &o.MatchID, &o.CreatedAt); err != nil {
 			return nil, err
 		}
 		out = append(out, o)

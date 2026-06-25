@@ -135,6 +135,22 @@ func TestMatchOnceCreatesMatch(t *testing.T) {
 	if open != 2 {
 		t.Fatalf("open GOLD orders = %d, want 2 (no cross)", open)
 	}
+
+	// ListOrders must carry match_id for matched orders (frontend order→match
+	// mapping) and leave it empty for still-open orders.
+	orders, err := st.ListOrders(ctx, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, o := range orders {
+		matched := o.Status == "matched"
+		if matched && o.MatchID == "" {
+			t.Errorf("matched order %s has empty match_id", o.ID)
+		}
+		if !matched && o.MatchID != "" {
+			t.Errorf("open order %s has unexpected match_id %s", o.ID, o.MatchID)
+		}
+	}
 }
 
 // TestRacingMatchersNoDoubleMatch: two matchers running matchOnce concurrently
