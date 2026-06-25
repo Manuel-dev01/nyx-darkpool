@@ -3,6 +3,9 @@
 # Environment / secrets
 .env
 .env.*
+# …but DO track the committed templates (no secrets, just documented defaults).
+!.env.example
+!**/.env.example
 *.local
 *.key
 *.pem

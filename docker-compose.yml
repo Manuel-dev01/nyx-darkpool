@@ -1,0 +1,89 @@
+# ============================================================================
+# Nyx Darkpool — full local stack (Phase 6).
+#   postgres  → migrate (one-shot) → engine (API + matcher + proving) → web
+#
+#   docker compose up -d --build      # or: make up
+#   open http://localhost:3000
+#
+# Proving runs INSIDE the engine container off the host-built circuit artifacts
+# bind-mounted at ./circuits/build (run `make circuits` / compile_circuit.sh once
+# if that dir is empty). On-chain settlement is an opt-in host/testnet step — set
+# NYX_SOROBAN_CONTRACT_ID (and a reachable stellar CLI) to enable it; unset, the
+# matcher stops after storing the proof.
+# ============================================================================
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-nyx}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nyx}
+      POSTGRES_DB: ${POSTGRES_DB:-nyx}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nyx} -d ${POSTGRES_DB:-nyx}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    image: migrate/migrate:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./engine/db/migrations:/migrations:ro
+    command:
+      - "-path=/migrations"
+      - "-database=postgres://${POSTGRES_USER:-nyx}:${POSTGRES_PASSWORD:-nyx}@postgres:5432/${POSTGRES_DB:-nyx}?sslmode=disable"
+      - "up"
+    restart: "no"
+
+  engine:
+    build:
+      context: .
+      dockerfile: engine/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      NYX_DATABASE_URL: postgres://${POSTGRES_USER:-nyx}:${POSTGRES_PASSWORD:-nyx}@postgres:5432/${POSTGRES_DB:-nyx}?sslmode=disable
+      NYX_HTTP_ADDR: ":8080"
+      NYX_LOG_LEVEL: ${NYX_LOG_LEVEL:-info}
+      NYX_CIRCUITS_ROOT: /circuits
+      NYX_SCRIPTS_ROOT: /scripts
+      # Optional: persist the at-rest blob key + enforce signed orders.
+      NYX_BLOB_KEY: ${NYX_BLOB_KEY:-}
+      NYX_REQUIRE_ORDER_SIG: ${NYX_REQUIRE_ORDER_SIG:-}
+      # Optional on-chain settle (off unless a contract id is provided).
+      NYX_SOROBAN_CONTRACT_ID: ${NYX_SOROBAN_CONTRACT_ID:-}
+      NYX_SOROBAN_NETWORK: ${NYX_SOROBAN_NETWORK:-testnet}
+      NYX_SOROBAN_SOURCE: ${NYX_SOROBAN_SOURCE:-nyx-engine}
+    volumes:
+      # Host-built proving artifacts (gitignored); read-only. If empty, the
+      # engine still runs and matches — proofs are simply skipped.
+      - ./circuits/build:/circuits/build:ro
+    ports:
+      - "8080:8080"
+
+  web:
+    build:
+      context: ./web
+      args:
+        # Baked into the Next rewrite at build time → proxy /api/engine/* here.
+        ENGINE_ORIGIN: http://engine:8080
+    depends_on:
+      - engine
+    environment:
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:

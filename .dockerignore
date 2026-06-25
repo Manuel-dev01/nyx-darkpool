@@ -1,0 +1,27 @@
+# Build context for the ENGINE image is the repo root (engine/Dockerfile needs
+# circuits/ + scripts/). Keep the context small and never ship host (Windows)
+# artifacts or secrets into the image.
+
+.git
+.gitignore
+**/.DS_Store
+
+# The whole web app is irrelevant to the engine image (it has its own build).
+web/
+
+# Heavy / host-specific / regenerated — never needed in the engine image.
+**/node_modules
+circuits/build/            # bind-mounted read-only at runtime instead
+**/*.ptau
+**/*.zkey
+**/*.r1cs
+**/*.sym
+**/*_js/
+scripts/bin/               # Windows circom.exe / stellar.exe (won't run on Linux)
+contracts/target/
+**/*.exe
+
+# Docs / planning noise (verification_key.json is .json, so it's unaffected).
+*.md
+.claude/
+docs/

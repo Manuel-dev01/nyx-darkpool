@@ -11,6 +11,9 @@ const ENGINE_ORIGIN = process.env.ENGINE_ORIGIN ?? "http://localhost:8080";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Emit a self-contained server bundle (.next/standalone/server.js) for a slim
+  // Docker runtime image. `next start` / `next dev` are unaffected.
+  output: "standalone",
   // This project lives inside a larger repo with other lockfiles; pin the
   // file-tracing root to this app so Next doesn't infer a parent directory.
   outputFileTracingRoot: here,
