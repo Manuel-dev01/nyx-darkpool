@@ -104,7 +104,7 @@ func run() error {
 	// --- HTTP API --------------------------------------------------------
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           api.NewServer(database, st, logger).Routes(),
+		Handler:           api.NewServer(database, st, cfg.RequireOrderSig, logger).Routes(),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

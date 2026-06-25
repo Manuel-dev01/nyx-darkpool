@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/nyx-darkpool/engine/internal/db"
 	"github.com/nyx-darkpool/engine/internal/order"
+	"github.com/nyx-darkpool/engine/internal/stellarkey"
 	"github.com/nyx-darkpool/engine/internal/store"
 )
 
@@ -33,16 +34,19 @@ type OrderStore interface {
 
 // Server holds the dependencies for the HTTP handlers.
 type Server struct {
-	db     Pinger
-	store  OrderStore // nil in health-only mode (e.g. unit tests)
-	logger *slog.Logger
+	db              Pinger
+	store           OrderStore // nil in health-only mode (e.g. unit tests)
+	logger          *slog.Logger
+	requireOrderSig bool // when true, POST /orders rejects unsigned orders
 }
 
 // NewServer wires the API to its dependencies. *db.DB satisfies Pinger and
-// *store.Store satisfies OrderStore.
-func NewServer(database *db.DB, st OrderStore, logger *slog.Logger) *Server {
+// *store.Store satisfies OrderStore. requireOrderSig enforces a valid ed25519
+// signature on every submitted order.
+func NewServer(database *db.DB, st OrderStore, requireOrderSig bool, logger *slog.Logger) *Server {
 	s := newServerWithPinger(database, logger)
 	s.store = st
+	s.requireOrderSig = requireOrderSig
 	return s
 }
 
@@ -89,6 +93,10 @@ type createOrderRequest struct {
 	Salt       string `json:"salt"`
 	Commitment string `json:"commitment"`
 	Nullifier  string `json:"nullifier"`
+	// Signature is a base64 ed25519 signature, by the keypair behind Pubkey,
+	// over the Commitment string. Verified when present (or always, when the
+	// engine runs with NYX_REQUIRE_ORDER_SIG=true).
+	Signature string `json:"signature"`
 }
 
 func (s *Server) handleCreateOrder(w http.ResponseWriter, r *http.Request) {
@@ -118,6 +126,21 @@ func (s *Server) handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 	payload := order.Payload{Price: req.Price, Volume: req.Volume, Salt: req.Salt}
 	if err := payload.Validate(); err != nil {
 		writeJSON(w, http.StatusBadRequest, errBody(err.Error()))
+		return
+	}
+
+	// Order authentication: the desk signs its commitment with the Stellar
+	// keypair whose G-address is the order pubkey. Verify when a signature is
+	// present; require one when the engine is configured to enforce it.
+	switch {
+	case req.Signature != "":
+		if err := stellarkey.Verify(req.Pubkey, req.Commitment, req.Signature); err != nil {
+			s.logger.Warn("order signature rejected", "pubkey", req.Pubkey, "error", err)
+			writeJSON(w, http.StatusUnauthorized, errBody("invalid order signature"))
+			return
+		}
+	case s.requireOrderSig:
+		writeJSON(w, http.StatusUnauthorized, errBody("order signature required"))
 		return
 	}
 

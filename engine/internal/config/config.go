@@ -12,6 +12,7 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -56,6 +57,12 @@ type Config struct {
 	// generates an ephemeral key at startup (encryption on, but orders do not
 	// survive a restart). Set NYX_BLOB_KEY to persist across restarts.
 	BlobKey string
+
+	// RequireOrderSig, when true, makes POST /orders reject any order without a
+	// valid ed25519 signature (by the order's pubkey) over its commitment. When
+	// false (default), a signature is verified only if present — so unsigned dev
+	// clients and tests still work while the signed frontend is authenticated.
+	RequireOrderSig bool
 }
 
 // maxDefaultWorkers caps the auto-detected worker count so a high-core host
@@ -78,6 +85,7 @@ func Load() (*Config, error) {
 		ScriptsRoot:         getenv("NYX_SCRIPTS_ROOT", "../scripts"),
 		NodeBin:             getenv("NYX_NODE_BIN", "node"),
 		BlobKey:             os.Getenv("NYX_BLOB_KEY"),
+		RequireOrderSig:     boolenv("NYX_REQUIRE_ORDER_SIG"),
 	}
 
 	if v := os.Getenv("NYX_DB_MAX_CONNS"); v != "" {
@@ -159,4 +167,15 @@ func getenv(key, def string) string {
 		return v
 	}
 	return def
+}
+
+// boolenv reports whether the env var is set to a truthy value (1/true/yes/on,
+// case-insensitive). Anything else (including unset) is false.
+func boolenv(key string) bool {
+	switch strings.ToLower(os.Getenv(key)) {
+	case "1", "true", "yes", "on":
+		return true
+	default:
+		return false
+	}
 }
