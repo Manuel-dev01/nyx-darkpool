@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Eclipse } from "../../_components/Eclipse";
+import { AccessForm } from "../_components/AccessForm";
 
 export const metadata: Metadata = { title: "Nyx — Desk access" };
 
@@ -9,7 +10,8 @@ const mono = "'IBM Plex Mono', monospace";
 const sans = "'Archivo', sans-serif";
 
 // Signed-key sign-in (App canvas screen 01) — the landing's "Enter the pool"
-// target. No product shell; "Authenticate" enters the Desk. (Auth logic pending.)
+// target. No product shell. Generate or import a Stellar desk keypair; it gates
+// /app/* and signs every order (verified by the engine).
 export default function Access() {
   return (
     <div
@@ -38,16 +40,9 @@ export default function Access() {
         <div style={{ fontFamily: serif, fontSize: 30, color: "#ECEEF0" }}>Nyx <span style={{ color: "#565C64" }}>Darkpool</span></div>
         <div style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.2em", color: "#3BD7E0", textTransform: "uppercase", marginTop: 10 }}>Desk access</div>
 
-        <div style={{ marginTop: 40, border: "1px solid #15181D", background: "#0A0C0F", padding: 8, display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontFamily: mono, fontSize: 11, color: "#3D434B", paddingLeft: 8 }}>KEY</span>
-          <span style={{ flex: 1, textAlign: "left", fontFamily: mono, fontSize: 13, color: "#8A9099", letterSpacing: "0.04em" }}>ssh-ed25519 ··········· 7af0</span>
+        <div style={{ marginTop: 36, textAlign: "left" }}>
+          <AccessForm />
         </div>
-        <Link
-          href="/app"
-          style={{ display: "block", marginTop: 14, background: "#3BD7E0", color: "#07080A", fontFamily: sans, fontWeight: 600, fontSize: 14, padding: 14, letterSpacing: "0.02em", textDecoration: "none" }}
-        >
-          Authenticate with signed key
-        </Link>
 
         <div style={{ marginTop: 30, display: "flex", alignItems: "center", justifyContent: "center", gap: 9 }}>
           <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#43C08A", animation: "nyxPulse 2s ease-in-out infinite" }} />

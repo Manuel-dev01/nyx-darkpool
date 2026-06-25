@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { Eclipse } from "../../_components/Eclipse";
 import { SideNav } from "../_components/SideNav";
+import { DeskFooter } from "../_components/DeskFooter";
+import { AuthGate } from "../_components/AuthGate";
 
 const serif = "'Spectral', serif";
-const mono = "'IBM Plex Mono', monospace";
 
 /**
  * The Nyx product shell — a full-screen dark app frame (sidebar + content),
@@ -54,18 +55,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
         <SideNav />
 
-        <div style={{ padding: "18px 22px", borderTop: "1px solid #13171C" }}>
-          <div style={{ fontFamily: mono, fontSize: 10, color: "#565C64", letterSpacing: "0.08em" }}>MERIDIAN CAPITAL</div>
-          <div style={{ fontFamily: mono, fontSize: 10, color: "#3D434B", marginTop: 5 }}>Desk 04 · key 7af0</div>
-          <Link href="/" style={{ display: "inline-block", marginTop: 14, fontFamily: mono, fontSize: 10, color: "#3D434B", letterSpacing: "0.1em", textTransform: "uppercase", textDecoration: "none" }}>
-            ← Exit to site
-          </Link>
-        </div>
+        <DeskFooter />
       </div>
 
       {/* content */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "auto" }}>
-        {children}
+        <AuthGate>{children}</AuthGate>
       </div>
     </div>
   );

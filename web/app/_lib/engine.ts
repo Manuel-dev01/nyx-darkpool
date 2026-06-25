@@ -17,6 +17,8 @@ export interface CreateOrderBody {
   salt: string;
   commitment: string;
   nullifier: string;
+  /** base64 ed25519 signature over the commitment, by the keypair behind pubkey. */
+  signature?: string;
 }
 
 export interface OrderSummary {

@@ -4,14 +4,14 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { seal, type Sealed } from "../../_lib/seal";
 import { createOrder } from "../../_lib/engine";
+import { loadDesk, signCommitment } from "../../_lib/desk";
 
 const mono = "'IBM Plex Mono', monospace";
 const sans = "'Archivo', sans-serif";
 
-// Fixed desk identity + market for this build (matches the access screen's
-// MERIDIAN CAPITAL · key 7af0). The engine treats pubkey/asset_pair as opaque
-// strings; both sides of a match must share the exact same asset_pair.
-const DESK_PUBKEY = "GMERIDIAN-CAPITAL-DESK-7AF0";
+// The order's pubkey is the authenticated desk's Stellar G-address (set at
+// /app/access); the engine treats asset_pair as an opaque string, and both
+// sides of a match must share the exact same asset_pair.
 const PAIR = "US-TBILL-26/USDC";
 
 /** Shorten a long decimal commitment for display. */
@@ -65,11 +65,16 @@ export function ComposeForm() {
 
   async function broadcast() {
     if (!sealed || busy) return;
+    const desk = loadDesk();
+    if (!desk) {
+      setSubmitErr("no desk identity — re-authenticate");
+      return;
+    }
     setBusy(true);
     setSubmitErr(null);
     try {
       const { id } = await createOrder({
-        pubkey: DESK_PUBKEY,
+        pubkey: desk.publicKey,
         asset_pair: PAIR,
         side: side === "BID" ? "bid" : "ask",
         price: sealed.priceInt,
@@ -77,6 +82,7 @@ export function ComposeForm() {
         salt: sealed.salt,
         commitment: sealed.commitment,
         nullifier: sealed.nullifier,
+        signature: signCommitment(desk, sealed.commitment),
       });
       try {
         localStorage.setItem("nyx.activeOrder", id);
