@@ -9,11 +9,11 @@ that a maker and taker order legitimately intersect at a valid price and volume;
 Soroban contract verifies that proof on-chain (using Stellar Protocol 26's native BN254
 host functions) before settling the asset swap atomically.
 
-> Status: **Phases 1–4 DONE** (workspace, Postgres engine, ZK circuit, on-chain Soroban
-> verifier — the real Phase-3 proof verifies live on-chain). The **`web/` frontend** (Next.js
-> landing + product app + brand showcases) is **done** as a parallel track.
-> **Phase 5 (concurrent matcher + proof routing → on-chain settlement) is IN PROGRESS.**
-> See [`STATUS.md`](./STATUS.md) for the live build ledger.
+> Status: **Phases 1–5 DONE** — workspace, Postgres engine, ZK circuit, on-chain Soroban
+> verifier, and the **off-chain matcher** (concurrent pairing → Groth16 proof → on-chain
+> `verify_and_settle`, verified live end-to-end). The **`web/` frontend** (Next.js landing +
+> product app + brand showcases) is done as a parallel track. **Phase 6 (orchestration &
+> Dockerization) is next.** See [`STATUS.md`](./STATUS.md) for the live build ledger.
 
 ---
 
@@ -151,8 +151,8 @@ in [`CLAUDE.md`](./CLAUDE.md); live progress is tracked in [`STATUS.md`](./STATU
 2. **Database Schema & Engine Boilerplate** — Postgres migrations + Go scaffold ✅
 3. **ZK Circuit Construction** — `darkpool_match.circom` + trusted setup ✅ _(+ Go test/E2E hardening)_
 4. **Soroban Verifier Contract** — on-chain Groth16 verification + settlement ✅ _(verified live on-chain)_
-5. **Off-Chain Engine Logic** — concurrent matcher + proof routing → on-chain settlement _(in progress)_
-6. **Orchestration & Dockerization** — compose + Makefile
+5. **Off-Chain Engine Logic** — concurrent matcher + proof routing → on-chain settlement ✅ _(verified end-to-end)_
+6. **Orchestration & Dockerization** — compose + Makefile _(next)_
 
 **Frontend (parallel track, not one of the six phases):** the `web/` Next.js app — interactive
 landing + product frontend + brand showcases — is **done** (build-verified); its backend wiring

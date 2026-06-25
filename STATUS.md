@@ -5,7 +5,7 @@
 > starting a phase and to `DONE` (with the commit short-hash) after a phase compiles,
 > passes validation, and is committed.
 
-_Last updated: 2026-06-25 (web frontend complete; Phase 5 IN PROGRESS)_
+_Last updated: 2026-06-25 (Phase 5 — concurrent matcher + proof + on-chain settle — DONE)_
 
 ## Phase Ledger
 
@@ -15,7 +15,7 @@ _Last updated: 2026-06-25 (web frontend complete; Phase 5 IN PROGRESS)_
 | 2     | Database Schema & Engine Boilerplate (Go/PG)  | DONE        | 26ca3ed |
 | 3     | ZK Circuit Construction (Circom + snarkjs)    | DONE        | 70bdafd |
 | 4     | Soroban Verifier Contract (Rust)              | DONE        | cf9b035 |
-| 5     | Off-Chain Engine Logic (Go matcher + proofs)  | IN PROGRESS | —       |
+| 5     | Off-Chain Engine Logic (Go matcher + proofs)  | DONE        | 3931aa2 |
 | 6     | Orchestration & Dockerization                 | PENDING     | —       |
 
 > Housekeeping commit `059ccac` (after Phase 2) replaced the empty-directory
@@ -211,3 +211,49 @@ was likewise merged in. To rebuild: `PATH=$HOME/.cargo/bin:/c/mingw64/bin:...` t
 `require_auth` needs a principal. Proof argument types (`BytesN<64>/<128>/<32>`,
 `Vec<BytesN<32>>`) are exactly as specified. Auth gates the settlement state write; the
 Groth16 pairing check is the cryptographic gate.
+
+## Phase 5 Checklist (commit 3931aa2)
+
+- [x] **order** — `internal/order`: `Order` type + `encrypted_blob` payload codec (price/volume/salt).
+- [x] **store** — `internal/store`: open-orders scan, atomic `CreateMatch` (SERIALIZABLE +
+  open→matched guard), `SetProof`/`SetOnchain`, read views; sentinels `ErrAlreadyMatched` /
+  `ErrSerialization` / `ErrDuplicate`.
+- [x] **prove** — `internal/prove`: snarkjs `wtns calculate` → `groth16 prove` via `os/exec` in a
+  per-call `os.MkdirTemp` (concurrency-safe); `ToHexProof` reuses `scripts/proof_to_bytes.js`.
+- [x] **matcher** — `internal/matcher` rewrite: poll loop pairs crossing ask/bid (price cross +
+  equal volume, FIFO) + dispatches `proof_blob IS NULL` matches (crash-safe) to a bounded worker
+  pool; workers prove → `SetProof` → (if `NYX_SOROBAN_CONTRACT_ID`) `verify_and_settle` →
+  `SetOnchain`. Graceful drain on ctx cancel.
+- [x] **config / api / wiring** — `NYX_MATCHER_WORKERS`/`POLL_INTERVAL`, `NYX_CIRCUITS_ROOT`,
+  `NYX_SCRIPTS_ROOT`, `NYX_NODE_BIN`; `POST /orders` + `GET /orders` + `GET /matches/{id}`;
+  `onchain.ResolveAddress`; `cmd/server` constructs store + prover + bridge.
+- [x] **docs(status)** — this update.
+
+### Verification evidence (Phase 5)
+- **Offline `go test ./...` + `-race`**: all packages green, no data races
+  (`PATH=/c/mingw64/bin:$PATH CGO_ENABLED=1 go test -race ./...`). Unit coverage: `pairOrders`
+  (cross/no-cross, equal/unequal volume, FIFO, multi-pair), payload codec, `prove.InputFor`,
+  matcher config, and the `POST /orders`/read handlers.
+- **Integration (Dockerized Postgres, `-tags=integration -p 1`, under `-race`)**:
+  - `matchOnce` pairs a crossing ask/bid and leaves a non-crossing pair open.
+  - **Racing-matchers test**: two matchers over one book → exactly N matches, **zero orders in
+    more than one match** (SERIALIZABLE + UNIQUE maker/taker prevent double-spend).
+  - **Proof pipeline**: real match → `prove.Generate` → `proof_blob` stored is a valid
+    `protocol:"groth16"` proof (4.3s).
+- **On-chain auto-settle (full pipeline, fresh contract `CC5GPL2Y…BOAXQ`, protocol 26)**: the
+  matcher's `proveAndSettle` drove `verify_and_settle` on-chain →
+  `matches.onchain_status='confirmed'`, `settlement_tx=d4cfcbc3…760af6c`. **PASS.**
+
+### Trust model (documented)
+The engine is the **off-chain prover/sequencer**, so it sees raw order values to match and prove —
+they live in `orders.encrypted_blob` (plaintext-at-rest for this build; **at-rest encryption is a
+future hardening seam**). Privacy is **vs. the public chain/mempool**, which only ever sees the
+Poseidon commitment + the proof — never price/volume. A client whose sealed `commitment` ≠
+`Poseidon(price,volume,salt)` simply yields an unprovable order (witness calc fails — no wrong
+proof can be produced). On-chain settlement stays **env-gated** (`NYX_SOROBAN_CONTRACT_ID`), so
+offline `go test ./...` needs no network/contract.
+
+### Frontend wiring (next, optional)
+The `web/` product frontend (`/app`) is built but not yet pointed at these endpoints; wiring
+`POST /orders` + `GET /matches/{id}` into the Compose/Pool/Proofs/Settled screens is the natural
+follow-on (Phase 6 brings the `docker-compose`/`Makefile` that runs engine + Postgres together).
