@@ -5,7 +5,7 @@
 > starting a phase and to `DONE` (with the commit short-hash) after a phase compiles,
 > passes validation, and is committed.
 
-_Last updated: 2026-06-25 (Phase 5.2 — desk auth + signed orders + demo-mode + receipt — DONE)_
+_Last updated: 2026-06-25 (Phase 6 — orchestration & Dockerization — IN PROGRESS)_
 
 ## Phase Ledger
 
@@ -18,7 +18,7 @@ _Last updated: 2026-06-25 (Phase 5.2 — desk auth + signed orders + demo-mode +
 | 5     | Off-Chain Engine Logic (Go matcher + proofs)  | DONE        | 3931aa2 |
 | 5.1   | At-rest encryption + frontend wiring + testnet | DONE        | 5190040 |
 | 5.2   | Desk auth (signed orders) + demo-mode + receipt | DONE        | a5e2678 |
-| 6     | Orchestration & Dockerization                 | PENDING     | —       |
+| 6     | Orchestration & Dockerization                 | IN PROGRESS | —       |
 
 > **Phase 5.1** closes the honest notes from Phase 5: (A) AES-256-GCM **at-rest encryption** of the
 > order blob (ephemeral key by default — no secret on disk); (B) wiring the `web/` frontend to the
