@@ -92,9 +92,11 @@ redirect to `/app/access`. The desk's **G-address is the order `pubkey`**, shown
 the signature** (`internal/stellarkey`; enforced with `NYX_REQUIRE_ORDER_SIG=true`).
 
 > SECURITY SEAM: for this client-only demo the secret seed is kept in `localStorage` so the browser
-> can sign. A real deployment would sign via a wallet extension (Freighter) and never expose the
-> secret. Generated desks are throwaway. **`localStorage` keys:** `nyx.desk`, `nyx.activeOrder`
-> (JSON `{id,side,pair,priceInt,volumeInt}`), `nyx.demoMode`.
+> can sign. A real deployment would sign via the [Freighter](https://www.freighter.app/) wallet
+> extension, where the secret never leaves the wallet — same signature scheme + engine verification,
+> only the signing seam in `desk.ts` changes. Full write-up:
+> [`../docs/key-custody.md`](../docs/key-custody.md). Generated desks are throwaway. **`localStorage`
+> keys:** `nyx.desk`, `nyx.activeOrder` (JSON `{id,side,pair,priceInt,volumeInt}`), `nyx.demoMode`.
 
 ### Demo flow & counterparty
 

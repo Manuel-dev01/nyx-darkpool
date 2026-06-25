@@ -163,7 +163,8 @@ Acknowledge this manual by creating the `STATUS.md` file, summarizing your stric
 - **Desk auth (Phase 5.2):** `/app/access` generates/imports a real **Stellar keypair**
   (`@stellar/stellar-base`); `AuthGate` gates `/app/*`; the desk's G-address is the order `pubkey`
   and every order's commitment is **signed** (verified by the engine — §5.2). The secret is kept in
-  `localStorage` for this client-only demo (documented seam; a real deploy uses a wallet extension).
+  `localStorage` for this client-only demo (documented seam; production signs via the **Freighter**
+  wallet — secret never in the page — see [`docs/key-custody.md`](docs/key-custody.md)).
   `localStorage` keys: `nyx.desk`, `nyx.activeOrder` (JSON meta), `nyx.demoMode`.
 - **Demo-Mode counterparty (Phase 5.2):** a default-ON toggle (sidebar) auto-posts a crossing,
   signed counter-order ~2.5s after compose, with a **race fallback** — it cancels if the order

@@ -70,7 +70,8 @@ _Last updated: 2026-06-25 (Phase 5.2 — desk auth + signed orders + demo-mode +
   all 200 under `next start`. **PASS.**
 - **Trust model:** desk identity is a real Stellar keypair; the engine verifies each order's
   ed25519 signature. The secret seed is held in `localStorage` for this client-only demo — a
-  **documented seam** (a production deploy signs via a wallet extension and never exposes the secret).
+  **documented seam** (production signs via the **Freighter** wallet, where the secret never leaves
+  the extension). Full write-up: [`docs/key-custody.md`](docs/key-custody.md).
 
 > Housekeeping commit `059ccac` (after Phase 2) replaced the empty-directory
 > `.gitkeep` placeholders with descriptive `README.md` files in `circuits/`,

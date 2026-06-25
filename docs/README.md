@@ -2,7 +2,14 @@
 
 Architecture notes, protocol specifications, and design records for Nyx.
 
-**Populated as the system matures.** Intended contents:
+## Records
+
+- [**key-custody.md**](./key-custody.md) — desk key custody for the demo (a Stellar keypair signs
+  orders; the secret sits in `localStorage`) vs. production (the [Freighter](https://www.freighter.app/)
+  wallet extension — the secret never leaves the wallet). Same signature scheme + engine verification
+  either way.
+
+**Populated as the system matures.** Further intended contents:
 
 - Protocol spec: order lifecycle, commitment scheme, and the match constraint system.
 - The ZK trust model and trusted-setup procedure.
