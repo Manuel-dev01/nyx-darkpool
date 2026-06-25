@@ -137,12 +137,17 @@ Acknowledge this manual by creating the `STATUS.md` file, summarizing your stric
   `price/volume/salt` in memory to match and prove. Privacy is **vs. the public chain/mempool**
   (which only sees the commitment + proof), now reinforced at rest by encryption.
 - **HTTP API:** `GET /healthz`, `POST /orders`, `GET /orders` (carries `match_id`), `GET /matches/{id}`.
+- **Order auth (Phase 5.2):** `POST /orders` accepts a base64 **ed25519 signature** over the
+  `commitment`, by the keypair whose G-address is the order `pubkey`. `internal/stellarkey` decodes
+  the StrKey (no heavy SDK) and verifies. A signature is verified when present; with
+  **`NYX_REQUIRE_ORDER_SIG=true`** it is mandatory (401 otherwise). Default off keeps tests + the
+  unsigned seed script working; the frontend always signs.
 - **DB:** migration **`000002_order_commitment`** added `orders.order_commitment` (Poseidon decimal
   string = the circuit's `maker_hash`/`taker_hash`).
 - **Env inventory:** `NYX_DATABASE_URL`, `NYX_HTTP_ADDR`, `NYX_DB_MAX_CONNS`, `NYX_DB_CONNECT_TIMEOUT`,
   `NYX_LOG_LEVEL`, `NYX_MATCHER_WORKERS`, `NYX_MATCHER_POLL_INTERVAL`, `NYX_CIRCUITS_ROOT`,
-  `NYX_SCRIPTS_ROOT`, `NYX_NODE_BIN`, `NYX_BLOB_KEY`, `NYX_SOROBAN_CONTRACT_ID`/`_NETWORK`/`_SOURCE`,
-  `NYX_STELLAR_BIN`.
+  `NYX_SCRIPTS_ROOT`, `NYX_NODE_BIN`, `NYX_BLOB_KEY`, `NYX_REQUIRE_ORDER_SIG`,
+  `NYX_SOROBAN_CONTRACT_ID`/`_NETWORK`/`_SOURCE`, `NYX_STELLAR_BIN`.
 
 ### 5.3 Frontend (`web/`) — parallel track, not one of the six phases
 - A **Next.js (App Router, TypeScript)** app: marketing landing `/` + the `/app` product frontend
@@ -155,7 +160,17 @@ Acknowledge this manual by creating the `STATUS.md` file, summarizing your stric
   Price is scaled ×100 (integer cents); a fresh random salt is generated per order.
 - Desk/Pool/Proofs/Settled are small `'use client'` islands polling `GET /orders` + `GET /matches/{id}`.
   `scripts/seed_demo_orders.js` posts a crossing pair for a one-command demo.
+- **Desk auth (Phase 5.2):** `/app/access` generates/imports a real **Stellar keypair**
+  (`@stellar/stellar-base`); `AuthGate` gates `/app/*`; the desk's G-address is the order `pubkey`
+  and every order's commitment is **signed** (verified by the engine — §5.2). The secret is kept in
+  `localStorage` for this client-only demo (documented seam; a real deploy uses a wallet extension).
+  `localStorage` keys: `nyx.desk`, `nyx.activeOrder` (JSON meta), `nyx.demoMode`.
+- **Demo-Mode counterparty (Phase 5.2):** a default-ON toggle (sidebar) auto-posts a crossing,
+  signed counter-order ~2.5s after compose, with a **race fallback** — it cancels if the order
+  already matched or a real opposing order rests (so a 2nd tab/desk wins). Off ⇒ pure multi-tab
+  manual crossing. The Settled screen offers a **downloadable JSON receipt**.
 
 ### 5.4 Build status
-Phases 1–5 + the frontend track are **DONE**; Phase 5.1 (encryption + FE wiring + public testnet) is
-**DONE**. **Phase 6 (Orchestration & Dockerization)** is the remaining numbered phase.
+Phases 1–5 + the frontend track are **DONE**; Phase 5.1 (encryption + FE wiring + public testnet)
+and Phase 5.2 (desk auth + signed orders + demo-mode + receipt) are **DONE**. **Phase 6
+(Orchestration & Dockerization)** is the remaining numbered phase.

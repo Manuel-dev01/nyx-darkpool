@@ -79,6 +79,9 @@ a succinct, verifiable proof of a fair match ever touches the chain.
 - **Privacy at rest:** the order's raw `price/volume/salt` (which the trusted off-chain prover
   needs) are stored **AES-256-GCM-encrypted** in `orders.encrypted_blob`. The engine encrypts by
   default with an **ephemeral key** (no secret written to disk); set `NYX_BLOB_KEY` to persist.
+- **Order authentication:** each desk is a real **Stellar keypair**; every order's commitment is
+  **ed25519-signed** and the engine verifies it against the order `pubkey` (`internal/stellarkey`).
+  Verified when present; mandatory with `NYX_REQUIRE_ORDER_SIG=true`.
 
 ---
 
@@ -158,6 +161,7 @@ in [`CLAUDE.md`](./CLAUDE.md); live progress is tracked in [`STATUS.md`](./STATU
 4. **Soroban Verifier Contract** — on-chain Groth16 verification + settlement ✅ _(verified live on-chain)_
 5. **Off-Chain Engine Logic** — concurrent matcher + proof routing → on-chain settlement ✅ _(verified end-to-end)_
    - **5.1** At-rest blob encryption + frontend↔engine wiring + **public testnet deploy** ✅ _(settlement tx live on stellar.expert)_
+   - **5.2** Desk auth — **Stellar keypair + engine-verified signed orders** + demo-mode counterparty + downloadable receipt ✅
 6. **Orchestration & Dockerization** — compose + Makefile _(next)_
 
 **Frontend (parallel track, not one of the six phases):** the `web/` Next.js app — interactive

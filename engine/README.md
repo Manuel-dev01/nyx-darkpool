@@ -15,6 +15,7 @@ engine/
 │   ├── order/           # order domain type + encrypted_blob payload (price/volume/salt) codec
 │   ├── store/           # data-access layer: open-orders scan, atomic CreateMatch, proof/onchain writes
 │   ├── secret/          # at-rest AES-256-GCM encryption for encrypted_blob (ephemeral key by default)
+│   ├── stellarkey/      # minimal Stellar StrKey codec + ed25519 order-signature verify (no heavy SDK)
 │   ├── prove/           # snarkjs proof generator (witness → groth16 prove) via os/exec, per-call temp dir
 │   ├── api/             # HTTP surface: /healthz, POST /orders, GET /orders, GET /matches/{id}
 │   ├── matcher/         # Phase 5: concurrent worker pool — match → prove → on-chain settle
@@ -77,6 +78,7 @@ Enums: `order_status (open|matched|settled|cancelled)`, `order_side (bid|ask)`,
 | `NYX_SCRIPTS_ROOT`       | `../scripts`                                              | `proof_to_bytes.js` (proof → BN254 bytes) |
 | `NYX_NODE_BIN`           | `node`                                                   | Node.js binary driving snarkjs   |
 | `NYX_BLOB_KEY`           | _(unset → ephemeral key)_                                | hex AES-256 key (32 bytes) for at-rest `encrypted_blob` encryption |
+| `NYX_REQUIRE_ORDER_SIG`  | `false`                                                  | require a valid ed25519 signature on every `POST /orders` |
 
 **At-rest encryption.** `orders.encrypted_blob` is sealed with AES-256-GCM (`internal/secret`).
 When `NYX_BLOB_KEY` is unset the engine generates an **ephemeral key at startup** — encryption is on
@@ -92,7 +94,7 @@ stops after storing `proof_blob`.
 
 | Method & path        | Purpose                                                                 |
 |----------------------|-------------------------------------------------------------------------|
-| `POST /orders`       | Submit a sealed order: `{pubkey, asset_pair, side, price, volume, salt, commitment, nullifier}` → `201 {id}`. `409` on nullifier reuse, `400` on bad input. |
+| `POST /orders`       | Submit a sealed order: `{pubkey, asset_pair, side, price, volume, salt, commitment, nullifier, signature?}` → `201 {id}`. `409` on nullifier reuse, `400` on bad input, `401` on a bad/missing signature. `signature` is base64 ed25519 over the commitment by the keypair behind `pubkey` (`internal/stellarkey`); verified when present, required when `NYX_REQUIRE_ORDER_SIG=true`. |
 | `GET /orders`        | List recent orders (no private values); `?limit=` (default 100). Each row carries `match_id` once the order is paired (for frontend order→match polling). |
 | `GET /matches/{id}`  | Read a match: maker/taker ids, `has_proof`, `onchain_status`, `settlement_tx`. |
 

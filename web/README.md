@@ -25,7 +25,7 @@ loading/empty states.
 | Route | Surface | Kind |
 |-------|---------|------|
 | `/` | **Landing** — Nocturne hero, schematic settlement-path section, working nav/CTAs | interactive TSX |
-| `/app/access` | **Desk access** — signed-key sign-in (the landing's "Enter the pool" target) | interactive TSX |
+| `/app/access` | **Desk access** — generate/import a real Stellar keypair; gates `/app/*` | interactive TSX |
 | `/app` | **Desk** — stats, open orders, activity | interactive TSX |
 | `/app/compose` | **Compose & seal** — live order form (side/TIF toggles, inputs, seal preview) | interactive TSX |
 | `/app/pool` | **In the pool** — shielded lattice + your order | interactive TSX |
@@ -83,20 +83,40 @@ and poll live state; the shell/layout stays a Server Component.
   → `GET /matches/{id}` to drive the pipeline and show the on-chain status + a **stellar.expert
   testnet** link for the settlement tx. Price/size are never returned by the API (they stay sealed).
 
-### Demo flow
+### Desk auth (Phase 5.2)
 
-A full settle needs a **crossing counter-order** (ask.price ≤ bid.price, equal volume). Either
-compose an **ASK then a BID** that cross via the UI, or run the one-command seeder:
+`/app/access` generates or imports a real **Stellar keypair** (`@stellar/stellar-base`,
+`app/_lib/desk.ts`). `AuthGate` (`app/app/_components/AuthGate.tsx`) gates `/app/*` — no desk ⇒
+redirect to `/app/access`. The desk's **G-address is the order `pubkey`**, shown in the sidebar
+(`DeskFooter`), and **every order's commitment is signed** (base64 ed25519); the **engine verifies
+the signature** (`internal/stellarkey`; enforced with `NYX_REQUIRE_ORDER_SIG=true`).
 
-```bash
-# 1. engine + Postgres running (see ../engine/README.md); 2. then:
-node ../scripts/seed_demo_orders.js          # posts a crossing pair → matcher pairs/proves/settles
+> SECURITY SEAM: for this client-only demo the secret seed is kept in `localStorage` so the browser
+> can sign. A real deployment would sign via a wallet extension (Freighter) and never expose the
+> secret. Generated desks are throwaway. **`localStorage` keys:** `nyx.desk`, `nyx.activeOrder`
+> (JSON `{id,side,pair,priceInt,volumeInt}`), `nyx.demoMode`.
+
+### Demo flow & counterparty
+
+A full settle needs a **crossing counter-order** (ask.price ≤ bid.price, equal volume). Three ways:
+
+- **Demo-Mode (default ON)** — a sidebar toggle ("Auto-fill counterparty · demo"). After Seal &
+  broadcast, the Pool screen waits ~2.5s and, if your order is still open and no real opposing order
+  has appeared, auto-posts **one** crossing signed counter (same pair/price/volume, opposite side).
+  So a solo order settles end-to-end. **Race fallback:** if a real counter (e.g. a 2nd tab) lands
+  first, the auto-fill cancels itself.
+- **Manual multi-tab** — toggle Demo-Mode **OFF** in two tabs (two desks): Tab A composes a BID,
+  Tab B a crossing ASK (same pair/size) → the matcher pairs the two real orders.
+- **Terminal seeder** — `node ../scripts/seed_demo_orders.js` posts a crossing pair (unsigned; run
+  the engine without `NYX_REQUIRE_ORDER_SIG`).
+
 ```
-
-```
-/  →  Enter the pool  →  /app/access  →  Authenticate  →  /app (Desk)
+/  →  Enter the pool  →  /app/access  →  Generate/Import key  →  /app (Desk)
    →  + New  →  /app/compose  →  Seal & broadcast  →  /app/pool  →  /app/proofs  →  /app/settled
 ```
+
+The Settled screen's **Download receipt** button saves a JSON settlement receipt
+(`nyx-receipt-<match>.json`) with the match, on-chain status, tx, and explorer link.
 
 ## Layout
 
@@ -110,11 +130,13 @@ web/
 │   ├── _lib/design.tsx         # <Design/> — verbatim render for the embedded showcases
 │   ├── _lib/engine.ts          # typed client for the engine API (/api/engine/*)
 │   ├── _lib/seal.ts            # in-browser Poseidon commitment (circomlibjs) + value scaling
-│   ├── _lib/ui.ts              # small shared formatters + active-order helper
+│   ├── _lib/desk.ts            # Stellar keypair desk identity + order signing (stellar-base)
+│   ├── _lib/ui.ts              # formatters + active-order meta + demo-mode helpers
 │   ├── _content/{brand-board,directions}.html   # the embedded showcase bodies
 │   ├── brand-board/page.tsx · directions/page.tsx · deliverables/page.tsx
 │   └── app/
 │       ├── _components/{SideNav,Topbar,ComposeForm,DeskBody,PoolBody,ProofsBody,SettledBody}.tsx
+│       ├── _components/{AccessForm,AuthGate,DeskFooter}.tsx   # auth: sign-in, route gate, identity+demo toggle
 │       ├── access/page.tsx     # /app/access (full-screen, outside the shell)
 │       └── (shell)/            # product shell route group
 │           ├── layout.tsx      # sidebar + content frame
@@ -148,7 +170,8 @@ web/
 ## Notes & placeholders
 
 - `CONTACT` mailto in `app/page.tsx` and the **Positions** screen are placeholders.
-- The `/app` screens are **wired to the engine** (orders → matching → proof → on-chain settlement).
-  The **access** sign-in is still cosmetic (no real auth), **Download receipt** is a no-op, and
-  price/size are scaled/sealed client-side — see *Wired to the engine* above.
+- The `/app` screens are **wired to the engine** (real keypair auth → signed orders → matching →
+  proof → on-chain settlement), with a working **Download receipt** and a default-on **Demo-Mode**
+  counterparty — see *Desk auth* and *Demo flow & counterparty* above. Remaining seam: the desk
+  secret lives in `localStorage` (real deploys sign via a wallet extension).
 - `design-src/` is authoritative; the embedded showcases under `app/_content/` are derived.

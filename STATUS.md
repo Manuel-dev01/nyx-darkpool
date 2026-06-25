@@ -5,7 +5,7 @@
 > starting a phase and to `DONE` (with the commit short-hash) after a phase compiles,
 > passes validation, and is committed.
 
-_Last updated: 2026-06-25 (Phase 5.1 — at-rest encryption + frontend wiring + public testnet — DONE)_
+_Last updated: 2026-06-25 (Phase 5.2 — desk auth + signed orders + demo-mode + receipt — DONE)_
 
 ## Phase Ledger
 
@@ -17,6 +17,7 @@ _Last updated: 2026-06-25 (Phase 5.1 — at-rest encryption + frontend wiring + 
 | 4     | Soroban Verifier Contract (Rust)              | DONE        | cf9b035 |
 | 5     | Off-Chain Engine Logic (Go matcher + proofs)  | DONE        | 3931aa2 |
 | 5.1   | At-rest encryption + frontend wiring + testnet | DONE        | 5190040 |
+| 5.2   | Desk auth (signed orders) + demo-mode + receipt | DONE        | a5e2678 |
 | 6     | Orchestration & Dockerization                 | PENDING     | —       |
 
 > **Phase 5.1** closes the honest notes from Phase 5: (A) AES-256-GCM **at-rest encryption** of the
@@ -49,6 +50,28 @@ _Last updated: 2026-06-25 (Phase 5.1 — at-rest encryption + frontend wiring + 
   - Contract: <https://stellar.expert/explorer/testnet/contract/CBAFC6W5IWQC5AB6LFMFI4KB4DZT23BU2O2AJ2H3B2727DO37DOJGJRV>
   - Settlement tx: <https://stellar.expert/explorer/testnet/tx/b78e514e0f2b4078218ab12627a5d260f9895943ef64b60e5040b55df1d4a10e>
 
+### Phase 5.2 — verification evidence (2026-06-25)
+**Commits:** `627352b` (engine sig verify) · `a5e2678` (desk auth) · `1866d86` (demo-mode) ·
+`1d21196` (receipt) · docs (this). Closes the three Phase-5.1 loose ends.
+
+- **Order signature verification (`internal/stellarkey` + API intake):** a minimal Stellar StrKey
+  codec + `ed25519.Verify`. Offline `go test ./...` green (codec round-trip vs a real testnet
+  G-address; signed-accept / tampered-401 / missing-401 / wrong-signer-401 API cases; unsigned still
+  allowed when not enforced). Standalone `stellarkey.test.exe` tripped a Defender heuristic, so the
+  tests run **inside `api.test.exe`** (which Defender accepts). **PASS.**
+- **Cross-language auth (JS ⇄ Go), live:** engine with `NYX_REQUIRE_ORDER_SIG=true`; a
+  `@stellar/stellar-base` signature (same lib the browser uses) over the commitment →
+  `POST /orders` **201**; unsigned → **401** ("order signature required"); tampered → **401**
+  ("invalid order signature"). **PASS.**
+- **Desk auth + demo-mode, live:** `next build` green (all routes; `/app/access`+`/app/compose`+
+  `/app/pool` bundle stellar-base). Simulated the demo-mode watcher against the enforcing engine: a
+  signed user **BID** + an auto-posted signed crossing **ASK** (same price/volume, opposite side,
+  fresh salt) → matcher paired both → `has_proof: true`. `/app/*` routes + the `/api/engine` proxy
+  all 200 under `next start`. **PASS.**
+- **Trust model:** desk identity is a real Stellar keypair; the engine verifies each order's
+  ed25519 signature. The secret seed is held in `localStorage` for this client-only demo — a
+  **documented seam** (a production deploy signs via a wallet extension and never exposes the secret).
+
 > Housekeeping commit `059ccac` (after Phase 2) replaced the empty-directory
 > `.gitkeep` placeholders with descriptive `README.md` files in `circuits/`,
 > `contracts/`, `docs/`, and `scripts/`.
@@ -75,6 +98,10 @@ numbered phases) and lives in `web/` — a **Next.js (App Router, TypeScript)** 
   proxy (`/api/engine/*` → `ENGINE_ORIGIN`). Compose seals a **real Poseidon commitment** (circomlibjs)
   and `POST`s `/orders`; Desk/Pool/Proofs/Settled poll `GET /orders` + `GET /matches/{id}` for live
   match/proof/settlement state. `web/README.md` documents the routes, the wiring, and the demo flow.
+- **Desk auth + demo-mode (Phase 5.2):** `/app/access` generates/imports a real **Stellar keypair**;
+  `AuthGate` gates `/app/*`; the G-address is the order `pubkey` and every order is **signed**
+  (engine-verified). A default-ON **Demo-Mode** auto-posts a crossing signed counter-order (race
+  fallback for real multi-tab crossing); the Settled screen downloads a JSON receipt.
 
 ## Repository State
 
