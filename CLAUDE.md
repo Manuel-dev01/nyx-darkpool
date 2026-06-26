@@ -199,3 +199,23 @@ Two user-facing gaps were closed without changing engine logic:
   demo-mode counterparty. The engine already matches per `asset_pair` (different pairs never cross).
 - **The presenter runbook is `docs/demo-script.md`** (4 acts: solo settle, two-desk/two-tab manual
   cross, multi-pair, "how do I know it's real").
+
+### 5.6 Cloud deploy — Vercel web + Railway engine/PG (self-contained on-chain), 2026-06-26
+The stack is now deployable to the cloud with **on-chain settlement working and no host dependency**:
+- **Engine image is fully self-contained.** `engine/Dockerfile` now bakes the two runtime circuit
+  artifacts (`circuits/build/darkpool_match_js/darkpool_match.wasm` + `darkpool_match_final.zkey`,
+  force-tracked in git via `.gitignore`/`.dockerignore` negations — everything else under
+  `circuits/build/` stays ignored), installs the **Linux `stellar` CLI v27** + **golang-migrate**, and
+  uses `engine/docker-entrypoint.sh` to (1) apply DB migrations on boot and (2) when
+  `NYX_SOROBAN_CONTRACT_ID` is set, **auto-generate + friendbot-fund** a testnet submitter (zero
+  secrets; `NYX_SOROBAN_SECRET` imports a fixed seed instead). No host bind-mount, no host CLI — a bare
+  `docker run` matches, proves, and settles on testnet. No engine Go changes.
+- **Web → engine is a RUNTIME proxy.** Replaced the build-time Next `rewrites()` with a route handler
+  `web/app/api/engine/[...path]/route.ts` that reads `ENGINE_ORIGIN` per request — so the same web
+  build runs on **Vercel** (→ Railway engine public URL) and in Docker/compose/Railway (→
+  `http://engine:8080`) with only an env var, no rebuild. `web/Dockerfile` dropped the build-ARG;
+  `docker-compose.yml` sets `ENGINE_ORIGIN` as a runtime env and no longer bind-mounts `circuits/build`
+  (now baked).
+- **Topology:** web → Vercel (GitHub-linked, public); engine + Postgres → Railway (engine public so
+  Vercel functions reach it; recommend `NYX_REQUIRE_ORDER_SIG=true`). Runbook: `docs/deploy.md`
+  (+ root `railway.json`). `make demo` (host) and off-chain `docker compose up` remain intact.

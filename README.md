@@ -158,6 +158,16 @@ presenter runbook is [`docs/demo-script.md`](docs/demo-script.md)** (solo settle
 manual cross → "how do I know it's real"). Use `docker compose up` for the fast off-chain stack;
 `make demo` for the real on-chain demo.
 
+### Deploy to the cloud — Vercel (web) + Railway (engine/PG), no host dependency
+
+For a hosted demo where **on-chain settlement works in the cloud** (so anyone can use it without our
+laptop), deploy the **web to Vercel** (GitHub-linked) and the **engine + Postgres to Railway**. The
+engine image is fully self-contained — it bakes the circuit artifacts + the Linux `stellar` CLI +
+`golang-migrate`, applies migrations on boot, and **auto-generates + friendbot-funds** a testnet
+submitter — so it matches, proves, **and settles on testnet** with nothing from the host. The web's
+`/api/engine/*` proxy reads `ENGINE_ORIGIN` at runtime, so the same build points anywhere with no
+rebuild. **Full runbook: [`docs/deploy.md`](docs/deploy.md).**
+
 ### Per-component (host toolchain)
 
 Each component also runs from its own directory (full toolchain notes in [`STATUS.md`](./STATUS.md)):

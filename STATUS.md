@@ -5,7 +5,7 @@
 > starting a phase and to `DONE` (with the commit short-hash) after a phase compiles,
 > passes validation, and is committed.
 
-_Last updated: 2026-06-26 (Phase 6 DONE — all six phases complete; **live testnet demo wiring + multi-pair selector DONE**)_
+_Last updated: 2026-06-26 (Phase 6 DONE; live demo + multi-pair DONE; **cloud deploy — Vercel web + Railway engine/PG, self-contained on-chain — code DONE; image-build verify pending network**)_
 
 ## Phase Ledger
 
@@ -145,6 +145,46 @@ plus a DB-port robustness fix (`docker-compose.demo.yml`, below).
 **The live demo path** is documented in [`docs/demo-script.md`](docs/demo-script.md) (4-act runbook:
 solo settle, two-desk/two-tab manual cross, "how do I know it's real"). `docker compose up` remains
 the fast off-chain stack; `make demo` is the real-on-chain demo.
+
+### Cloud deploy — Vercel web + Railway engine/PG (self-contained on-chain) — 2026-06-26
+Makes the stack deployable to the cloud with **on-chain settlement working and zero host dependency**
+(a judge opens a URL — no `make demo` on our laptop). Decisions: on-chain key = **auto-generate +
+friendbot-fund** (zero secrets); web→engine = **runtime proxy** (env-configurable, no rebuild); split
+= **web→Vercel (GitHub-linked), engine+Postgres→Railway**.
+
+**Commits:** `<this batch>` — engine self-containment, runtime proxy, deploy docs.
+
+- **Engine image is self-contained (`engine/Dockerfile`).** Bakes the two runtime circuit artifacts
+  (`darkpool_match.wasm` 1.8 MB + `darkpool_match_final.zkey` 698 KB — force-tracked via
+  `.gitignore`/`.dockerignore` negations; verified `git add -n circuits/build/` stages **only** those
+  two, ptau/r1cs/sym stay ignored), installs the **Linux `stellar` CLI v27** + **golang-migrate** on a
+  full `node:24` base (no apt — avoids flaky Debian mirrors), and runs
+  `engine/docker-entrypoint.sh` → migrations on boot + (when `NYX_SOROBAN_CONTRACT_ID` set)
+  **auto-generate + friendbot-fund** a testnet submitter (or import `NYX_SOROBAN_SECRET`). No engine
+  Go changes; no host bind-mount; no host CLI.
+- **Runtime web→engine proxy — VERIFIED.** `web/app/api/engine/[...path]/route.ts` (a `nodejs`
+  `force-dynamic` route handler) reads `ENGINE_ORIGIN` per request; the build-time `rewrites()` is
+  removed. `next build` shows it as `ƒ /api/engine/[...path]` (dynamic function). Live: built web
+  (`next start`) with **runtime** `ENGINE_ORIGIN=http://localhost:8080` against a host engine →
+  `/api/engine/healthz` → `{"status":"ok"}`; `/api/engine/orders?limit=2` → live orders (GET + query
+  passthrough); `POST /api/engine/orders` (bad body) → engine's **400** passed through (POST + body +
+  status). This is the exact code path Vercel runs. `web/Dockerfile` dropped the build-ARG;
+  `docker-compose.yml` sets `ENGINE_ORIGIN` at runtime and no longer bind-mounts `circuits/build`.
+- **Offline regression:** `go vet ./... && go test ./...` green (no engine code changed);
+  `cd web && npm run build` green (14 routes + the new dynamic proxy).
+- **Runbook:** [`docs/deploy.md`](docs/deploy.md) (Vercel web + Railway engine/PG, env tables,
+  friendbot/auto-fund, testnet-reset → redeploy-CID, all-Railway alternative) + root `railway.json`.
+
+> **⚠️ Pending verification (transient local network throttle):** the full **engine image build +
+> bare-container on-chain settle** (plan verification step 3) could **not** be run locally this
+> session — Docker Hub/base-image pulls were throttled to ~70 B/s and no `node`/`golang` base was
+> cached, so the multi-stage build couldn't fetch its bases. The Dockerfile + entrypoint are complete
+> and logically verified; the build will be exercised on **Railway's** (fast) build network on deploy,
+> or locally once the connection recovers (`docker build -f engine/Dockerfile -t nyx-engine .` then a
+> bare `docker run` with `NYX_SOROBAN_CONTRACT_ID` set should log `proving:true onchain:true` and
+> settle a real testnet tx). On-chain settlement itself is **already proven** on testnet via the host
+> engine (same engine binary + same `stellar` CLI v27 + same baked artifacts) — tx
+> `0706f517…a9dc9` / `6c1372b0…449dcb`, both SUCCESS; the image only repackages these.
 
 ## Frontend Track (parallel to the manual's 6 phases)
 
