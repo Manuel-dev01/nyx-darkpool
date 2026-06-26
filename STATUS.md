@@ -5,7 +5,18 @@
 > starting a phase and to `DONE` (with the commit short-hash) after a phase compiles,
 > passes validation, and is committed.
 
-_Last updated: 2026-06-26 (Phase 6 DONE; live demo + multi-pair DONE; **cloud deploy — self-contained engine image BUILT + on-chain settle VERIFIED from a bare container; hosting: Render (engine) + Vercel (web)**)_
+_Last updated: 2026-06-26 (Phase 6 DONE; live demo + multi-pair DONE; **CLOUD DEPLOY LIVE — web on Vercel + engine/PG on Render, on-chain settlement verified through the public URL**)_
+
+> **🌐 LIVE deployment (2026-06-26):** web **<https://nyx-darkpool.vercel.app>** (Vercel, GitHub-linked
+> → auto-deploys) → engine **<https://nyx-engine.onrender.com>** (Render `srv-d8v8f0po3t8c73f7c86g`,
+> from [`render.yaml`](render.yaml): free Postgres + the self-contained Docker engine, on-chain on).
+> **Verified end-to-end through the public Vercel URL:** a signed order posted to
+> `https://nyx-darkpool.vercel.app/api/engine/orders` → matched → `has_proof:true` → **settled on
+> Stellar testnet** → tx `c103e539c3b3c3d13747d0feb16cd66f87eb5e6501db42da3344ca623777f94f`
+> (Horizon `successful:true`, ledger 3293883). The Render engine auto-funded its own testnet submitter
+> (`GC5BZPPP…KZZ5`) at boot — zero secrets. _Note: both hosts auto-deploy on push to `main`
+> (Render `autoDeploy`, Vercel git-connected); if a future git-triggered Vercel build fails, confirm
+> Root Directory = `web` in the Vercel project settings._
 
 ## Phase Ledger
 
