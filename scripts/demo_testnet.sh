@@ -42,8 +42,11 @@ export NYX_SOROBAN_SOURCE="${NYX_SOROBAN_SOURCE:-nyx-engine}"
 export NYX_STELLAR_BIN="${NYX_STELLAR_BIN:-$ROOT/scripts/bin/stellar.exe}"
 RPC_URL="${NYX_SOROBAN_RPC_URL:-https://soroban-testnet.stellar.org}"
 
-# Postgres: reuse the compose service on :5432 by default.
-export NYX_DATABASE_URL="${NYX_DATABASE_URL:-postgres://nyx:nyx@localhost:5432/nyx?sslmode=disable}"
+# Postgres: the compose service, published on a dedicated IPv4 loopback port (5544)
+# via docker-compose.demo.yml so the host engine connects unambiguously even when a
+# native Postgres already occupies 5432 (common on Windows). Override NYX_DATABASE_URL
+# to point at your own DB if you prefer.
+export NYX_DATABASE_URL="${NYX_DATABASE_URL:-postgres://nyx:nyx@127.0.0.1:5544/nyx?sslmode=disable}"
 export NYX_HTTP_ADDR="${NYX_HTTP_ADDR:-:8080}"
 export NYX_CIRCUITS_ROOT="${NYX_CIRCUITS_ROOT:-$ROOT/circuits}"
 export NYX_SCRIPTS_ROOT="${NYX_SCRIPTS_ROOT:-$ROOT/scripts}"
@@ -57,7 +60,7 @@ export NYX_BLOB_KEY="${NYX_BLOB_KEY:-0000000000000000000000000000000000000000000
 # ---------------------------------------------------------------------------
 # 1. Postgres + migrations (docker compose one-shots).
 # ---------------------------------------------------------------------------
-COMPOSE="${COMPOSE:-docker compose}"
+COMPOSE="${COMPOSE:-docker compose} -f docker-compose.yml -f docker-compose.demo.yml"
 log "starting Postgres + applying migrations (docker compose)…"
 $COMPOSE up -d postgres >&2
 $COMPOSE up migrate >&2 || true   # one-shot; idempotent (no-op if already applied)

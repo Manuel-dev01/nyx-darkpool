@@ -1,0 +1,17 @@
+# docker-compose.demo.yml — override for the live testnet demo (scripts/demo_testnet.sh).
+#
+# The live demo runs the ENGINE on the host (it needs the stellar CLI for on-chain
+# settlement), so the host process must reach the compose Postgres over a published
+# port. The default 5432 publish can collide with a *native* Postgres already on the
+# host (Windows installs one on 0.0.0.0:5432), leaving the compose DB reachable only
+# over an ambiguous IPv6 path. This override publishes the compose Postgres on a
+# dedicated, explicit IPv4 loopback port (5544) that won't collide, so the host
+# engine connects unambiguously. The in-network services (engine/web containers,
+# migrate) still use postgres:5432 — only the host-published port is added.
+#
+# Used automatically by scripts/demo_testnet.sh:
+#   docker compose -f docker-compose.yml -f docker-compose.demo.yml up -d postgres
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:5544:5432"
