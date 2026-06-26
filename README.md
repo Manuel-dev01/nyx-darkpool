@@ -139,6 +139,25 @@ stays an **opt-in host/testnet step** (see Contracts below); the engine containe
 CLI, so `onchain_status` is `pending` under `compose` by design. The `Makefile` wraps these plus
 `make circuits` / `make contracts` / `make test-all`.
 
+### Live demo — REAL on-chain testnet settlement (`make demo`)
+
+To run the demo where the pipeline **completes on-chain** (proof → `verify_and_settle` on public
+Stellar testnet → a browsable settlement tx), run the engine **on the host** (where the `stellar`
+CLI + a funded testnet identity live) instead of in the container:
+
+```bash
+make demo        # terminal 1 → bash scripts/demo_testnet.sh  (Postgres via compose + host engine, on-chain ON)
+make demo-web    # terminal 2 → cd web && npm run dev          → http://localhost:3000
+```
+
+`scripts/demo_testnet.sh` brings up Postgres, reuses the deployed testnet verifier (redeploys +
+friendbot-funds automatically if testnet has reset — `NYX_REDEPLOY=1` forces it), exports the
+on-chain env, and runs the engine with `onchain:true`. Then every match genuinely settles on testnet
+and the Proofs screen animates all four stages to DONE with a stellar.expert link. **The full
+presenter runbook is [`docs/demo-script.md`](docs/demo-script.md)** (solo settle → two-desk/two-tab
+manual cross → "how do I know it's real"). Use `docker compose up` for the fast off-chain stack;
+`make demo` for the real on-chain demo.
+
 ### Per-component (host toolchain)
 
 Each component also runs from its own directory (full toolchain notes in [`STATUS.md`](./STATUS.md)):

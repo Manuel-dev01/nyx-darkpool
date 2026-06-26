@@ -179,3 +179,23 @@ public testnet), Phase 5.2 (desk auth + signed orders + demo-mode + receipt), an
 whole stack with **in-container proving** (Node + snarkjs in the engine image, `circuits/build`
 bind-mounted). On-chain settle stays an opt-in host/testnet step (no `stellar` CLI in the image).
 The web image bakes `ENGINE_ORIGIN` at build time (Next bakes `rewrites()`) → `http://engine:8080`.
+
+### 5.5 Live testnet demo & multi-pair (post-Phase-6 polish, 2026-06-26)
+Two user-facing gaps were closed without changing engine logic:
+- **Live on-chain demo path.** Because the compose engine image has no `stellar` CLI, the Proofs
+  pipeline under `docker compose` stops at "Verifying on-chain" (`onchain_status` stays `pending`
+  by design — the proof is real and stored). For a demo where the pipeline *completes on-chain*,
+  **`scripts/demo_testnet.sh`** (`make demo`) runs the engine **on the host** with
+  `NYX_SOROBAN_CONTRACT_ID` set to the deployed testnet verifier, so matches genuinely
+  `verify_and_settle` on testnet (`onchain:true`). It reuses the deployed CID and redeploys +
+  friendbot-funds if testnet has reset (`NYX_REDEPLOY=1` forces it). Verified live: a browser-scale
+  pair (price 9984, vol 5,000,000) settled → tx `0706f517…a9dc9` (`successful:true`, ledger 3284327).
+  `docker compose up` remains the fast off-chain stack. The compose off-chain UX was left unchanged
+  (decision: "Real testnet only"). **`docker-compose.demo.yml`** publishes the compose Postgres on a
+  dedicated `127.0.0.1:5544` so the host engine connects unambiguously even when a native Postgres
+  occupies 5432 (common on Windows).
+- **Real multi-pair selector.** `web/.../ComposeForm.tsx` replaced a static pair `<div>` with a
+  controlled `<select>` of 4 RWA pairs; `asset_pair` threads through Pool/Proofs/Settled and the
+  demo-mode counterparty. The engine already matches per `asset_pair` (different pairs never cross).
+- **The presenter runbook is `docs/demo-script.md`** (4 acts: solo settle, two-desk/two-tab manual
+  cross, multi-pair, "how do I know it's real").

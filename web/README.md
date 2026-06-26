@@ -83,6 +83,11 @@ and poll live state; the shell/layout stays a Server Component.
   (2 decimals → integer cents) and size separators are stripped, to match the engine's base-10
   integer domain; a fresh random salt is generated per order. "Seal & broadcast" `POST`s `/orders`,
   stores the returned id in `localStorage`, and routes to `/app/pool?order=<id>`.
+- **Pair selector (real).** Compose has a working `<select>` of RWA pairs
+  (`US-TBILL-26/27`, `EU-BUND-30`, `GOLD-RWA`, all vs `USDC`). The chosen pair is sent as
+  `asset_pair` and threaded through the active-order meta into Pool/Proofs/Settled and the demo-mode
+  counterparty. The engine matches **per pair**, so a manual two-desk cross requires both desks to
+  pick the **same** pair (different pairs never cross).
 - **Live screens poll.** Desk renders `GET /orders` (counts + table + activity); Pool shows the open
   commitments as the lattice + your active order; Proofs/Settled follow the active order's `match_id`
   → `GET /matches/{id}` to drive the pipeline and show the on-chain status + a **stellar.expert
@@ -124,6 +129,13 @@ A full settle needs a **crossing counter-order** (ask.price ≤ bid.price, equal
 
 The Settled screen's **Download receipt** button saves a JSON settlement receipt
 (`nyx-receipt-<match>.json`) with the match, on-chain status, tx, and explorer link.
+
+> **Completing the on-chain leg.** The Proofs pipeline's last two stages ("Verifying on-chain" →
+> "Atomic settlement") only go DONE when the engine reports `onchain_status: confirmed`. That happens
+> only when the engine runs with on-chain settlement enabled — the **host** demo engine
+> (`make demo` / `scripts/demo_testnet.sh`), **not** the `docker compose` engine (whose image has no
+> `stellar` CLI, so `onchain_status` stays `pending` and those two stages spin by design). For a live
+> end-to-end demo with a real, browsable settlement tx, follow [`../docs/demo-script.md`](../docs/demo-script.md).
 
 ## Layout
 

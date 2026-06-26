@@ -5,7 +5,7 @@
 > starting a phase and to `DONE` (with the commit short-hash) after a phase compiles,
 > passes validation, and is committed.
 
-_Last updated: 2026-06-26 (Phase 6 DONE — all six phases complete; **live testnet demo wiring + multi-pair selector IN PROGRESS**)_
+_Last updated: 2026-06-26 (Phase 6 DONE — all six phases complete; **live testnet demo wiring + multi-pair selector DONE**)_
 
 ## Phase Ledger
 
@@ -98,6 +98,53 @@ via `docker-compose.yml` + `Makefile`. **All six numbered phases are now complet
 > Housekeeping commit `059ccac` (after Phase 2) replaced the empty-directory
 > `.gitkeep` placeholders with descriptive `README.md` files in `circuits/`,
 > `contracts/`, `docs/`, and `scripts/`.
+
+### Live testnet demo + multi-pair selector — verification evidence (2026-06-26)
+Post-Phase-6 polish so the live UI completes the *full* pipeline (incl. on-chain) and the pair
+control actually works. Two user-facing issues were diagnosed and addressed:
+
+1. **Proofs pipeline "stuck on Verifying on-chain", never reaching Atomic settlement.** Root cause:
+   under `docker compose` the engine image has **no `stellar` CLI** and `NYX_SOROBAN_CONTRACT_ID` is
+   unset, so on-chain settlement is off *by design* — `onchain_status` stays `pending` and the UI
+   (which only advances stages 3–4 on `confirmed`) spins forever. The proof itself is real and stored
+   (`has_proof:true`). **Fix:** a host-engine demo path with on-chain **on** —
+   [`scripts/demo_testnet.sh`](scripts/demo_testnet.sh) + `make demo` (compose UX left untouched, per
+   decision "Real testnet only").
+2. **Pair dropdown frozen on US-TBILL-26/USDC.** It was a static `<div>` (no `<select>`). **Fix:** a
+   real controlled `<select>` of 4 RWA pairs in `web/app/app/_components/ComposeForm.tsx`, threaded
+   through `asset_pair` into Pool/Proofs/Settled and the demo-mode counterparty.
+
+**Commits:** `8c0c8a5` (multi-pair selector) · `ac547a0` (demo runbook + Makefile) · docs (this) ·
+plus a DB-port robustness fix (`docker-compose.demo.yml`, below).
+
+- **Offline regression:** `cd engine && go vet ./... && go test ./...` green (no engine code changed);
+  `cd web && npm run build` green — all 14 routes prerender with the new `<select>`. **PASS.**
+- **Compose off-chain (proving in-container):** `docker compose up -d` + `seed_demo_orders.js` →
+  match `b626e64a` → `GET /matches` `has_proof:true`, `onchain_status:pending` (no `settlement_tx`) —
+  the proof is real; the chain leg is gated off. This is exactly the "stuck" the user saw. **PASS.**
+- **Host engine + REAL testnet (`make demo`):** engine logs `matcher started proving:true
+  onchain:true`. Posted a **browser-scale** crossing pair (price `9984` = 99.84×100, volume
+  `5,000,000` — the exact compose-form domain) → match `2825ddb7` → `has_proof:true` →
+  `submitted` → **`confirmed`** in ~9 s → `settlement_tx`
+  **`0706f517bac065f62151dfb6699e6b0da8da7ee85544f930aad277500e0a9dc9`**. Horizon confirms
+  **`successful:true`, ledger 3284327**, source `GAW2WLHI…3YRK` (the `nyx-engine` identity).
+  This proves browser-scale values prove + settle fine (the 64-bit circuit easily holds them — the
+  "match located" symptom was the on-chain gating / async timing, **not** a proving/range bug).
+  **PASS.** — <https://stellar.expert/explorer/testnet/tx/0706f517bac065f62151dfb6699e6b0da8da7ee85544f930aad277500e0a9dc9>
+- **Multi-desk same-pair cross + multi-pair isolation:** two distinct desk pubkeys posting a crossing
+  BID/ASK on `EU-BUND-30/USDC` → one **shared** match `f0cc7aaa`, settled on-chain
+  (`settlement_tx 6c1372b0…449dcb`, `confirmed`); meanwhile a BID on `US-TBILL-27/USDC` + an ASK on
+  `GOLD-RWA/USDC` stayed **open** (different pairs never cross). **PASS.**
+- **DB-port robustness (`docker-compose.demo.yml`):** the host engine reaches the compose Postgres
+  over a published port; on this Windows host a **native Postgres already occupies `0.0.0.0:5432`**,
+  so `localhost:5432` resolved to an IPv6 path with mismatched creds (SASL auth failed). The override
+  publishes the compose DB on a dedicated **`127.0.0.1:5544`** and `demo_testnet.sh` points the host
+  engine there — unambiguous regardless of a native 5432. In-network services still use
+  `postgres:5432`.
+
+**The live demo path** is documented in [`docs/demo-script.md`](docs/demo-script.md) (4-act runbook:
+solo settle, two-desk/two-tab manual cross, "how do I know it's real"). `docker compose up` remains
+the fast off-chain stack; `make demo` is the real-on-chain demo.
 
 ## Frontend Track (parallel to the manual's 6 phases)
 
