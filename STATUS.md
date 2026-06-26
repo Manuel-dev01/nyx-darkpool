@@ -5,7 +5,7 @@
 > starting a phase and to `DONE` (with the commit short-hash) after a phase compiles,
 > passes validation, and is committed.
 
-_Last updated: 2026-06-26 (Phase 6 — orchestration & Dockerization — DONE; all six phases complete)_
+_Last updated: 2026-06-26 (Phase 6 DONE — all six phases complete; **live testnet demo wiring + multi-pair selector IN PROGRESS**)_
 
 ## Phase Ledger
 

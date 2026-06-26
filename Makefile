@@ -12,15 +12,17 @@
 #   make contracts # cargo test + stellar contract build (host: rust+stellar CLI)
 #   make test-all  # engine offline tests (always green, no toolchain needed)
 #   make seed      # post a crossing demo pair to the running engine
+#   make demo      # LIVE demo: host engine + REAL on-chain testnet settlement
+#   make demo-web  # the web app for the demo (run in a second terminal)
 # ============================================================================
 
 COMPOSE ?= docker compose
 
-.PHONY: up down down-v logs ps build migrate seed \
+.PHONY: up down down-v logs ps build migrate seed demo demo-web \
         circuits contracts test-all test-integration e2e-offchain e2e-onchain help
 
 help:
-	@echo "Targets: up down down-v logs ps build migrate seed circuits contracts test-all test-integration e2e-offchain e2e-onchain"
+	@echo "Targets: up down down-v logs ps build migrate seed demo demo-web circuits contracts test-all test-integration e2e-offchain e2e-onchain"
 
 # --- Stack lifecycle --------------------------------------------------------
 up:
@@ -47,6 +49,18 @@ migrate:
 # Post a crossing ASK/BID pair (real Poseidon commitments) to the running engine.
 seed:
 	node scripts/seed_demo_orders.js
+
+# --- Live demo (REAL on-chain testnet settlement) ---------------------------
+# Runs the engine ON THE HOST (where the stellar CLI + funded testnet identity
+# live) with NYX_SOROBAN_CONTRACT_ID set, so matches genuinely settle on Stellar
+# testnet and the Proofs pipeline completes to a browsable tx. Brings up Postgres
+# via compose; start the web app with `make demo-web` in a second terminal.
+# Equivalent if you have no `make`: bash scripts/demo_testnet.sh
+demo:
+	bash scripts/demo_testnet.sh
+
+demo-web:
+	cd web && npm run dev
 
 # --- Build / verify per component (need the host toolchain) -----------------
 circuits:
