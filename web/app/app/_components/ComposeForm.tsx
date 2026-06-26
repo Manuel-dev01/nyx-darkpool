@@ -12,8 +12,10 @@ const sans = "'Archivo', sans-serif";
 
 // The order's pubkey is the authenticated desk's Stellar G-address (set at
 // /app/access); the engine treats asset_pair as an opaque string, and both
-// sides of a match must share the exact same asset_pair.
-const PAIR = "US-TBILL-26/USDC";
+// sides of a match must share the exact same asset_pair. The matcher only
+// crosses orders on the *same* pair — so a manual two-desk cross requires both
+// desks to pick the same pair here.
+const PAIRS = ["US-TBILL-26/USDC", "US-TBILL-27/USDC", "EU-BUND-30/USDC", "GOLD-RWA/USDC"] as const;
 
 /** Shorten a long decimal commitment for display. */
 function short(dec: string): string {
@@ -31,6 +33,7 @@ type Tif = "GTC" | "IOC" | "1H";
 
 export function ComposeForm() {
   const router = useRouter();
+  const [pair, setPair] = useState<string>(PAIRS[0]);
   const [side, setSide] = useState<Side>("BID");
   const [tif, setTif] = useState<Tif>("GTC");
   const [price, setPrice] = useState("99.84");
@@ -76,7 +79,7 @@ export function ComposeForm() {
     try {
       const { id } = await createOrder({
         pubkey: desk.publicKey,
-        asset_pair: PAIR,
+        asset_pair: pair,
         side: side === "BID" ? "bid" : "ask",
         price: sealed.priceInt,
         volume: sealed.volumeInt,
@@ -90,7 +93,7 @@ export function ComposeForm() {
       setActiveOrder({
         id,
         side: side === "BID" ? "bid" : "ask",
-        pair: PAIR,
+        pair,
         priceInt: sealed.priceInt,
         volumeInt: sealed.volumeInt,
       });
@@ -107,9 +110,29 @@ export function ComposeForm() {
       <div style={{ flex: "1.2 1 360px", padding: 28, borderRight: "1px solid #13171C", display: "flex", flexDirection: "column", gap: 22 }}>
         <div>
           <div style={label}>Pair</div>
-          <div style={field}>
-            <span style={{ fontFamily: sans, fontWeight: 600, fontSize: 15, color: "#ECEEF0" }}>US-TBILL-26 / USDC</span>
-            <span style={{ fontFamily: mono, fontSize: 11, color: "#565C64" }}>▾</span>
+          <div style={{ ...field, padding: 0 }}>
+            <select
+              aria-label="Asset pair"
+              value={pair}
+              onChange={(e) => setPair(e.target.value)}
+              style={{
+                appearance: "none", WebkitAppearance: "none", MozAppearance: "none",
+                background: "transparent", border: "none", outline: "none",
+                color: "#ECEEF0", fontFamily: sans, fontWeight: 600, fontSize: 15,
+                width: "100%", padding: "14px 16px", cursor: "pointer",
+                // arrow drawn as an inline SVG background so it tracks the brand colour
+                backgroundImage:
+                  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23565C64' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E\")",
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "right 16px center",
+              }}
+            >
+              {PAIRS.map((p) => (
+                <option key={p} value={p} style={{ background: "#0A0C0F", color: "#ECEEF0" }}>
+                  {p.replace("/", " / ")}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
