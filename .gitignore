@@ -64,3 +64,17 @@ Cargo.lock.orig
 # ─── Logs ──────────────────────────────────────────────────────────────────
 *.log
 logs/
+
+# ─── Cloud deploy: force-track the two runtime proving artifacts ─────────────
+# The engine image bakes these (~2.5 MB total) so it proves SELF-CONTAINED on
+# Vercel/Railway with no host bind-mount. Re-include the parent dirs first (git
+# can't re-include a file whose parent dir is excluded), then re-exclude the dir
+# contents and allow only the wasm. Everything else under circuits/build/
+# (ptau/r1cs/sym/intermediate zkeys) stays ignored by the rules above. These two
+# files MUST match the deployed testnet verifier's verification key.
+!/circuits/build/
+/circuits/build/*
+!/circuits/build/darkpool_match_final.zkey
+!/circuits/build/darkpool_match_js/
+/circuits/build/darkpool_match_js/*
+!/circuits/build/darkpool_match_js/darkpool_match.wasm

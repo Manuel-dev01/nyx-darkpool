@@ -25,3 +25,14 @@ contracts/target/
 *.md
 .claude/
 docs/
+
+# Cloud deploy: bake ONLY the two runtime proving artifacts (wasm witness gen +
+# final zkey, ~2.5 MB) into the engine image so it proves self-contained (no host
+# bind-mount). Re-include the build dir, re-exclude its contents, then allow just
+# these two paths — ptau/r1cs/sym/intermediate zkeys stay out of the image.
+!circuits/build/
+circuits/build/*
+!circuits/build/darkpool_match_final.zkey
+!circuits/build/darkpool_match_js/
+circuits/build/darkpool_match_js/*
+!circuits/build/darkpool_match_js/darkpool_match.wasm
