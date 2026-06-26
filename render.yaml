@@ -1,0 +1,49 @@
+# Render Blueprint — Nyx engine + Postgres (the on-chain backend).
+# Deploy: push this repo to GitHub, then Render Dashboard → New → Blueprint →
+# connect the repo → Apply. Render reads this file, provisions the database, and
+# builds + runs engine/Dockerfile (which bakes the circuit artifacts + stellar
+# CLI and auto-generates + friendbot-funds a testnet submitter on boot). The web
+# frontend deploys separately to Vercel (set ENGINE_ORIGIN to this service's URL).
+#
+# Notes / free-tier caveats:
+#   - Free web services sleep after ~15 min idle (cold start ~1 min). Fine for an
+#     interactive demo; for a 24/7 matcher use a paid instance or a background worker.
+#   - Free Postgres has a limited lifetime — see Render's docs.
+#   - The engine listens on Render's injected $PORT (handled by docker-entrypoint.sh).
+
+databases:
+  - name: nyx-postgres
+    plan: free
+    databaseName: nyx
+    user: nyx
+
+services:
+  - type: web
+    name: nyx-engine
+    runtime: docker
+    plan: free
+    dockerfilePath: ./engine/Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      # Postgres connection (Render injects the provisioned DB's URL).
+      - key: NYX_DATABASE_URL
+        fromDatabase:
+          name: nyx-postgres
+          property: connectionString
+      # On-chain settlement on public Stellar testnet (the deployed nyx-verifier).
+      - key: NYX_SOROBAN_CONTRACT_ID
+        value: CBAFC6W5IWQC5AB6LFMFI4KB4DZT23BU2O2AJ2H3B2727DO37DOJGJRV
+      - key: NYX_SOROBAN_NETWORK
+        value: testnet
+      # Engine is public (Vercel calls it) → require signed orders (frontend signs).
+      - key: NYX_REQUIRE_ORDER_SIG
+        value: "true"
+      - key: NYX_LOG_LEVEL
+        value: info
+      # Optional: set a persistent 64-hex key so orders survive restarts. Leave
+      # unset for an ephemeral key (no secret on disk). Set in the Render dashboard
+      # as a secret rather than committing it here.
+      # - key: NYX_BLOB_KEY
+      #   sync: false

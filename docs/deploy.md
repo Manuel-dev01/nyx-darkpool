@@ -28,7 +28,34 @@ This deploys the **whole stack to the cloud with on-chain settlement working** �
 
 ---
 
-## 1. Railway — Postgres + engine
+## 1. Engine + Postgres — choose a host
+
+The engine image is host-agnostic (self-contained Docker). Two documented options:
+**Render** (Blueprint, recommended here) or **Railway**. Both build `engine/Dockerfile` on their
+own fast network and run it. Pick one; then do the Vercel web step (§2).
+
+### Option A — Render (Blueprint) ⭐
+
+Render is Git-driven and reads [`../render.yaml`](../render.yaml) (a Blueprint that provisions a free
+Postgres + the engine Docker service, fully wired).
+
+1. **Push this repo to GitHub.**
+2. Render Dashboard → **New → Blueprint** → connect the repo → **Apply**. Render reads `render.yaml`,
+   creates `nyx-postgres` (free) and builds + runs `nyx-engine` from `engine/Dockerfile`.
+   - `NYX_DATABASE_URL` is auto-wired from the DB; `NYX_SOROBAN_CONTRACT_ID` / `NYX_SOROBAN_NETWORK` /
+     `NYX_REQUIRE_ORDER_SIG` are set in the blueprint. The engine binds Render's `$PORT`
+     (handled by `docker-entrypoint.sh`) and exposes `/healthz`.
+3. Watch the deploy logs: `applying DB migrations… migrations OK` →
+   `generating + friendbot-funding stellar identity 'nyx-engine'` → `on-chain submitter: G…` →
+   `matcher started proving:true onchain:true`. The service URL is your **engine origin**
+   (`https://nyx-engine-xxxx.onrender.com`).
+
+> Free-tier caveats: a free web service **sleeps after ~15 min idle** (cold start ~1 min — fine for an
+> interactive demo; the matcher resumes on the next request) and free Postgres has a limited lifetime.
+> If `NYX_DATABASE_URL` needs SSL, append `?sslmode=require` to the wired value. For a 24/7 matcher,
+> use a paid instance.
+
+### Option B — Railway
 
 **Prereq:** push this repo to GitHub (Railway and Vercel both deploy from GitHub).
 

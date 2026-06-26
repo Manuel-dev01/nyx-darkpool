@@ -19,6 +19,14 @@ set -u
 
 log() { echo "[entrypoint] $*" >&2; }
 
+# --- 0. Port: honour a platform-injected $PORT (Render/Heroku/Fly) -----------
+# Hosts that assign a port expect the app to listen on $PORT. Bind it when set;
+# otherwise keep NYX_HTTP_ADDR (defaults to :8080 in config).
+if [ -n "${PORT:-}" ]; then
+  export NYX_HTTP_ADDR=":${PORT}"
+  log "binding platform port: NYX_HTTP_ADDR=$NYX_HTTP_ADDR"
+fi
+
 # --- 1. DB migrations -------------------------------------------------------
 if [ -n "${NYX_DATABASE_URL:-}" ] && [ -d /migrations ]; then
   log "applying DB migrations…"

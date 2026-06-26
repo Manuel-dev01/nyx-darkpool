@@ -5,7 +5,7 @@
 > starting a phase and to `DONE` (with the commit short-hash) after a phase compiles,
 > passes validation, and is committed.
 
-_Last updated: 2026-06-26 (Phase 6 DONE; live demo + multi-pair DONE; **cloud deploy — Vercel web + Railway engine/PG, self-contained on-chain — code DONE; image-build verify pending network**)_
+_Last updated: 2026-06-26 (Phase 6 DONE; live demo + multi-pair DONE; **cloud deploy — self-contained engine image BUILT + on-chain settle VERIFIED from a bare container; hosting: Render (engine) + Vercel (web)**)_
 
 ## Phase Ledger
 
@@ -175,16 +175,29 @@ friendbot-fund** (zero secrets); web→engine = **runtime proxy** (env-configura
 - **Runbook:** [`docs/deploy.md`](docs/deploy.md) (Vercel web + Railway engine/PG, env tables,
   friendbot/auto-fund, testnet-reset → redeploy-CID, all-Railway alternative) + root `railway.json`.
 
-> **⚠️ Pending verification (transient local network throttle):** the full **engine image build +
-> bare-container on-chain settle** (plan verification step 3) could **not** be run locally this
-> session — Docker Hub/base-image pulls were throttled to ~70 B/s and no `node`/`golang` base was
-> cached, so the multi-stage build couldn't fetch its bases. The Dockerfile + entrypoint are complete
-> and logically verified; the build will be exercised on **Railway's** (fast) build network on deploy,
-> or locally once the connection recovers (`docker build -f engine/Dockerfile -t nyx-engine .` then a
-> bare `docker run` with `NYX_SOROBAN_CONTRACT_ID` set should log `proving:true onchain:true` and
-> settle a real testnet tx). On-chain settlement itself is **already proven** on testnet via the host
-> engine (same engine binary + same `stellar` CLI v27 + same baked artifacts) — tx
-> `0706f517…a9dc9` / `6c1372b0…449dcb`, both SUCCESS; the image only repackages these.
+- **Self-contained image — BUILT + on-chain settle VERIFIED from a bare container.**
+  `docker build -f engine/Dockerfile -t nyx-engine-cloud .` succeeds; `docker run` it with **no
+  `circuits/build` mount and no host stellar CLI** (only `NYX_DATABASE_URL` + `NYX_SOROBAN_CONTRACT_ID`
+  + `NYX_SOROBAN_NETWORK=testnet`) → entrypoint logs `applying DB migrations… OK` →
+  `generating + friendbot-funding stellar identity 'nyx-engine'` → `on-chain submitter:
+  GAGVGFDW…OYXQ` (a **fresh auto-funded** address) → `matcher started proving:true onchain:true`.
+  Posted a browser-scale crossing pair → `has_proof:true` (proving off the **baked** artifacts) →
+  `submitted` → **`confirmed`** → `settlement_tx`
+  **`2a9999a23fa6126e48326cc08f0ed12b5a55d4143edbc3f03050e0cf1034c439`**, Horizon
+  **`successful:true`, ledger 3293331**, source = the container's auto-funded submitter. This is the
+  Railway/Render-equivalent proof: the image needs **nothing** from the host. **PASS.** —
+  <https://stellar.expert/explorer/testnet/tx/2a9999a23fa6126e48326cc08f0ed12b5a55d4143edbc3f03050e0cf1034c439>
+
+> **Build-robustness notes (for cloud builds):** the stellar CLI dynamically links `libdbus-1.so.3`
+> (its keyring backend), absent from `node:24` — fetched from the Debian **snapshot** archive in the
+> build stage and `COPY`-ed in (no apt → works on networks/CDNs that 403 the Debian pool, e.g. this
+> dev host). Binary downloads use `curl --retry-all-errors -C -`; `npm ci` uses `--fetch-retries`.
+> The engine honours a platform-injected `$PORT` (Render/Heroku/Fly) via `docker-entrypoint.sh`.
+
+> **Deploy hosting:** Railway was attempted first but its **free plan blocked new-project
+> provisioning** ("resource provision limit exceeded"), so the engine host is **Render** (Blueprint
+> [`render.yaml`](render.yaml) — free Postgres + the engine Docker service, on-chain wired). Web →
+> Vercel. See [`docs/deploy.md`](docs/deploy.md).
 
 ## Frontend Track (parallel to the manual's 6 phases)
 
