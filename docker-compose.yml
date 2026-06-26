@@ -64,22 +64,20 @@ services:
       NYX_SOROBAN_CONTRACT_ID: ${NYX_SOROBAN_CONTRACT_ID:-}
       NYX_SOROBAN_NETWORK: ${NYX_SOROBAN_NETWORK:-testnet}
       NYX_SOROBAN_SOURCE: ${NYX_SOROBAN_SOURCE:-nyx-engine}
-    volumes:
-      # Host-built proving artifacts (gitignored); read-only. If empty, the
-      # engine still runs and matches — proofs are simply skipped.
-      - ./circuits/build:/circuits/build:ro
+    # Proving artifacts (wasm + final zkey) are now BAKED into the engine image
+    # (committed under circuits/build), so no host bind-mount is needed — the
+    # image proves self-contained, identical to the Railway deployment.
     ports:
       - "8080:8080"
 
   web:
     build:
       context: ./web
-      args:
-        # Baked into the Next rewrite at build time → proxy /api/engine/* here.
-        ENGINE_ORIGIN: http://engine:8080
     depends_on:
       - engine
     environment:
+      # Read at RUNTIME by the proxy route handler (no build-arg / rebuild needed).
+      ENGINE_ORIGIN: http://engine:8080
       PORT: "3000"
       HOSTNAME: 0.0.0.0
     ports:

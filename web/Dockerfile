@@ -4,18 +4,14 @@
 #   - build:   npm ci + next build (output: "standalone").
 #   - runtime: copy the self-contained server + static assets only.
 #
-# BUILD CONTEXT = ./web. The app reads ENGINE_ORIGIN at server start to proxy
-# /api/engine/* to the engine (see next.config.mjs); compose sets it to
-# http://engine:8080.
+# BUILD CONTEXT = ./web. ENGINE_ORIGIN is read at RUNTIME by the proxy route
+# handler (app/api/engine/[...path]/route.ts) — NOT baked at build time — so this
+# image is portable: set ENGINE_ORIGIN as an env var on the platform (compose →
+# http://engine:8080, Railway → the engine's domain). No build-arg needed.
 # ============================================================================
 
 FROM node:24-slim AS build
 WORKDIR /app
-# Next bakes rewrites() destinations at BUILD time, so ENGINE_ORIGIN must be set
-# here (not just at runtime). Defaults to the compose service name; override with
-# --build-arg ENGINE_ORIGIN=... for a different engine host.
-ARG ENGINE_ORIGIN=http://engine:8080
-ENV ENGINE_ORIGIN=${ENGINE_ORIGIN}
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
