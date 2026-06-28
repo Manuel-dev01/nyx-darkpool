@@ -104,11 +104,25 @@ stops after storing `proof_blob`.
 ## Run with Docker (full stack)
 
 From the repo root, `docker compose up -d` (or `make up`) builds this engine image (Go binary on a
-`node:24` base, so the matcher **proves in-container** off the bind-mounted `circuits/build`
-artifacts), runs the migrations via a one-shot `migrate/migrate` service, and starts Postgres + the
-web app wired together. See [`../docker-compose.yml`](../docker-compose.yml) and the root
-[`README.md`](../README.md) Quickstart. On-chain settle stays an opt-in host/testnet step (the image
-has no `stellar` CLI). The rest of this section is the from-source host workflow.
+`node:24` base, so the matcher **proves in-container** off the **baked** `circuits/build` artifacts —
+the image bundles them, no host mount), runs the migrations via a one-shot `migrate/migrate` service,
+and starts Postgres + the web app wired together (web reads `ENGINE_ORIGIN` at runtime). See
+[`../docker-compose.yml`](../docker-compose.yml) and the root [`README.md`](../README.md) Quickstart.
+
+**One self-contained image; on-chain is gated by config, not by the image.** `engine/Dockerfile`
+always bundles the Linux `stellar` CLI + `golang-migrate`, and
+[`docker-entrypoint.sh`](./docker-entrypoint.sh) applies migrations on boot and — **when
+`NYX_SOROBAN_CONTRACT_ID` is set** — **auto-generates + friendbot-funds** a testnet submitter and
+settles on-chain. So:
+- **`docker compose` leaves `NYX_SOROBAN_CONTRACT_ID` unset** → on-chain settle is **off** and
+  `onchain_status` stays `pending` by design (the proof is still real and stored), for fast local
+  iteration. Set it (+ `NYX_SOROBAN_NETWORK=testnet`) and even compose settles on testnet — the image
+  already has the CLI. `make demo` (host) is a one-command on-chain local run.
+- **On the hosted deploy** ([`render.yaml`](../render.yaml) sets the contract id), a bare deploy
+  matches, proves, **and settles on testnet** with nothing from the host. **Render** is the live host
+  (Railway/Fly work the same — the image is host-agnostic). See [`../docs/deploy.md`](../docs/deploy.md).
+
+The rest of this section is the from-source host workflow.
 
 ## Local development
 

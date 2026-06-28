@@ -1,8 +1,15 @@
-# Deploying Nyx Darkpool to the cloud (Vercel + Railway)
+# Deploying Nyx Darkpool to the cloud (Vercel + Render)
 
 This deploys the **whole stack to the cloud with on-chain settlement working** — no laptop, no
 `make demo`, nothing local. A judge just opens the Vercel URL and the full pipeline (match → prove →
 **verify_and_settle on Stellar testnet**) runs end-to-end.
+
+> **Live deployment (2026-06-26):** web **<https://nyx-darkpool.vercel.app>** (Vercel, GitHub-linked) →
+> engine **<https://nyx-engine.onrender.com>** (Render Blueprint, service `srv-d8v8f0po3t8c73f7c86g`) +
+> a Render-managed Postgres. Verified end-to-end through the public URL — a signed order settled on
+> Stellar testnet (see [`../STATUS.md`](../STATUS.md) for the tx). The engine host is **Render**;
+> Railway was the original plan but its free plan blocked new-project provisioning (kept below as an
+> alternative — the image is host-agnostic).
 
 ## Topology
 
@@ -10,17 +17,17 @@ This deploys the **whole stack to the cloud with on-chain settlement working** �
   Browser ──> Vercel (Next.js web, public)
                  │  /api/engine/*  (server-side route handler, reads ENGINE_ORIGIN at runtime)
                  ▼
-              Railway engine (Go matcher + snarkjs + stellar CLI, PUBLIC URL)
-                 ├──> Railway Postgres (managed)
+              Render engine (Go matcher + snarkjs + stellar CLI, PUBLIC URL)
+                 ├──> Render Postgres (managed)
                  └──> Stellar testnet  (verify_and_settle on the deployed nyx-verifier)
 ```
 
 - **Web → Vercel** (GitHub-linked, CI/CD on push). Vercel is built for Next.js.
-- **Engine + Postgres → Railway.** Railway runs the long-lived Go matcher + Postgres + the `stellar`
+- **Engine + Postgres → Render.** Render runs the long-lived Go matcher + Postgres + the `stellar`
   CLI (which Vercel's serverless model can't).
 - **No CORS:** the browser only ever calls same-origin `/api/engine/*` on Vercel; the route handler
   ([`web/app/api/engine/[...path]/route.ts`](../web/app/api/engine/[...path]/route.ts)) forwards
-  server-side to the Railway engine. The only coupling is one env var, `ENGINE_ORIGIN`.
+  server-side to the engine. The only coupling is one env var, `ENGINE_ORIGIN`.
 
 > The engine image is **fully self-contained** — it bakes the circuit artifacts (wasm + zkey), the
 > Linux `stellar` CLI, and `golang-migrate`, and its entrypoint applies migrations and
@@ -28,13 +35,14 @@ This deploys the **whole stack to the cloud with on-chain settlement working** �
 
 ---
 
-## 1. Engine + Postgres — choose a host
+## 1. Engine + Postgres — Render (the live host)
 
-The engine image is host-agnostic (self-contained Docker). Two documented options:
-**Render** (Blueprint, recommended here) or **Railway**. Both build `engine/Dockerfile` on their
-own fast network and run it. Pick one; then do the Vercel web step (§2).
+The engine image is host-agnostic (self-contained Docker). The **live deployment runs on Render**
+via a Blueprint; **Railway** is documented afterwards as an alternative (its free plan blocked our
+provisioning). Both build `engine/Dockerfile` on their own fast network and run it. Then do the
+Vercel web step (§2).
 
-### Option A — Render (Blueprint) ⭐
+### Option A — Render (Blueprint) ⭐ — the live host
 
 Render is Git-driven and reads [`../render.yaml`](../render.yaml) (a Blueprint that provisions a free
 Postgres + the engine Docker service, fully wired).
@@ -55,7 +63,11 @@ Postgres + the engine Docker service, fully wired).
 > If `NYX_DATABASE_URL` needs SSL, append `?sslmode=require` to the wired value. For a 24/7 matcher,
 > use a paid instance.
 
-### Option B — Railway
+### Option B — Railway (alternative; not the live host)
+
+> Railway's **free plan blocked new-project provisioning** during our deploy ("resource provision
+> limit exceeded"), so the live engine runs on **Render** (Option A). These steps are kept for
+> reference — on a paid plan they work, since the engine image is host-agnostic.
 
 **Prereq:** push this repo to GitHub (Railway and Vercel both deploy from GitHub).
 
@@ -99,7 +111,7 @@ Postgres + the engine Docker service, fully wired).
 
   | Variable | Value |
   |----------|-------|
-  | `ENGINE_ORIGIN` | `https://<engine>.up.railway.app` (the Railway engine's public URL, **no** trailing slash) |
+  | `ENGINE_ORIGIN` | the engine's public URL, **no** trailing slash — live: `https://nyx-engine.onrender.com` |
 
 - **Deploy.** Vercel builds `web/` and serves it. Because `ENGINE_ORIGIN` is read **at request time**
   by the route handler, you can change it anytime in Vercel → no rebuild. Every GitHub push
@@ -112,8 +124,9 @@ to **Settled atomically** with a real stellar.expert tx. (See [`demo-script.md`]
 
 ## Verifying it end-to-end
 
-- `curl https://<engine>.up.railway.app/healthz` → `{"db":"up","status":"ok"}`.
-- On the Vercel site, `https://<web>/api/engine/orders` returns the live order list (proxied).
+- `curl https://nyx-engine.onrender.com/healthz` → `{"db":"up","status":"ok"}`.
+- On the Vercel site, `https://nyx-darkpool.vercel.app/api/engine/orders` returns the live order list
+  (proxied).
 - Compose an order (Demo-Mode on) → the engine logs `proof generated` → `settled on-chain tx=…`; the
   Settled screen links to the tx on stellar.expert (status SUCCESS).
 
@@ -122,11 +135,11 @@ to **Settled atomically** with a real stellar.expert tx. (See [`demo-script.md`]
 - **Testnet resets** (~quarterly) wipe deployed contracts. If `verify_and_settle` starts failing,
   redeploy the verifier from a host with the toolchain
   (`NYX_SOROBAN_NETWORK=testnet bash scripts/deploy_contract.sh`) and update
-  `NYX_SOROBAN_CONTRACT_ID` on the Railway engine. Mainnet is out of scope (needs a real funded key).
+  `NYX_SOROBAN_CONTRACT_ID` on the Render engine. Mainnet is out of scope (needs a real funded key).
 - **Public engine hardening:** with `NYX_REQUIRE_ORDER_SIG=true`, every `POST /orders` must carry a
   valid ed25519 signature (the frontend always signs). Read endpoints only ever return commitments —
   never price/volume. There are no admin/mutating endpoints.
-- **Cost/scale:** the engine is a single small container; Postgres is Railway's smallest plugin. The
+- **Cost/scale:** the engine is a single small container; Postgres is Render's free instance. The
   proxy route handler is a thin Vercel function (one fetch per call).
 
 ## Alternative: all-Railway (web also on Railway)

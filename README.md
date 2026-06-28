@@ -9,13 +9,20 @@ that a maker and taker order legitimately intersect at a valid price and volume;
 Soroban contract verifies that proof on-chain (using Stellar Protocol 26's native BN254
 host functions) before settling the asset swap atomically.
 
-> Status: **All six phases DONE** — workspace, Postgres engine, ZK circuit, on-chain Soroban
-> verifier, the **off-chain matcher** (concurrent pairing → Groth16 proof → on-chain
-> `verify_and_settle`), **at-rest AES-256-GCM encryption** of the order blob, the **`web/` frontend
-> wired to the engine** (real in-browser Poseidon commitment → live order/proof/settlement screens),
-> and a **public Stellar testnet** deployment of the verifier (settlement tx browsable on
-> stellar.expert). **Phase 6 (orchestration)** ships a one-command `docker compose` stack +
-> `Makefile`. See [`STATUS.md`](./STATUS.md) for the live build ledger, contract id, and explorer links.
+> ### ▶ Live demo: **<https://nyx-darkpool.vercel.app>**
+> No install — generate a desk, compose an order, and watch it **match → prove → settle on Stellar
+> testnet** with a browsable stellar.expert transaction. Web on **Vercel**, engine + Postgres on
+> **Render** (`https://nyx-engine.onrender.com`). New to it? Follow
+> [`docs/test-checklist.md`](docs/test-checklist.md) to walk every screen.
+
+> Status: **Live in the cloud** (web → Vercel, engine + Postgres → Render; on-chain settlement
+> verified through the public URL). **All six build phases DONE** — workspace, Postgres engine, ZK
+> circuit, on-chain Soroban verifier, the **off-chain matcher** (concurrent pairing → Groth16 proof →
+> on-chain `verify_and_settle`), **at-rest AES-256-GCM encryption** of the order blob, the **`web/`
+> frontend wired to the engine** (real in-browser Poseidon commitment → live order/proof/settlement
+> screens), a **public Stellar testnet** verifier, and **Phase 6 (orchestration)** — a one-command
+> `docker compose` stack + `Makefile`. See [`STATUS.md`](./STATUS.md) for the live build ledger,
+> contract id, deployment URLs, and explorer links.
 
 ---
 
@@ -134,10 +141,12 @@ docker compose down                 # or: make down   (down -v also wipes the DB
 ```
 
 `docker compose up` builds the engine (Go + Node/snarkjs, so it **proves in-container**) and the web
-app (Next standalone), runs the migrations, and wires web → engine → Postgres. On-chain settlement
-stays an **opt-in host/testnet step** (see Contracts below); the engine container has no `stellar`
-CLI, so `onchain_status` is `pending` under `compose` by design. The `Makefile` wraps these plus
-`make circuits` / `make contracts` / `make test-all`.
+app (Next standalone), runs the migrations, and wires web → engine → Postgres. On-chain settlement is
+**off by default under compose** — `NYX_SOROBAN_CONTRACT_ID` is unset, so `onchain_status` stays
+`pending` (the proof is still real and stored). The engine image bundles the `stellar` CLI, so setting
+that var (+ `NYX_SOROBAN_NETWORK=testnet`) makes even compose settle on testnet; `make demo` is the
+one-command on-chain local run. The `Makefile` wraps these plus `make circuits` / `make contracts` /
+`make test-all`.
 
 ### Live demo — REAL on-chain testnet settlement (`make demo`)
 
@@ -158,15 +167,16 @@ presenter runbook is [`docs/demo-script.md`](docs/demo-script.md)** (solo settle
 manual cross → "how do I know it's real"). Use `docker compose up` for the fast off-chain stack;
 `make demo` for the real on-chain demo.
 
-### Deploy to the cloud — Vercel (web) + Railway (engine/PG), no host dependency
+### Deploy to the cloud — Vercel (web) + Render (engine/PG), no host dependency
 
-For a hosted demo where **on-chain settlement works in the cloud** (so anyone can use it without our
-laptop), deploy the **web to Vercel** (GitHub-linked) and the **engine + Postgres to Railway**. The
-engine image is fully self-contained — it bakes the circuit artifacts + the Linux `stellar` CLI +
-`golang-migrate`, applies migrations on boot, and **auto-generates + friendbot-funds** a testnet
-submitter — so it matches, proves, **and settles on testnet** with nothing from the host. The web's
-`/api/engine/*` proxy reads `ENGINE_ORIGIN` at runtime, so the same build points anywhere with no
-rebuild. **Full runbook: [`docs/deploy.md`](docs/deploy.md).**
+This is **already live** ([nyx-darkpool.vercel.app](https://nyx-darkpool.vercel.app) →
+[nyx-engine.onrender.com](https://nyx-engine.onrender.com)). The **web** runs on Vercel (GitHub-linked)
+and the **engine + Postgres** on Render (via [`render.yaml`](render.yaml)). The engine image is fully
+self-contained — it bakes the circuit artifacts + the Linux `stellar` CLI + `golang-migrate`, applies
+migrations on boot, and **auto-generates + friendbot-funds** a testnet submitter — so it matches,
+proves, **and settles on testnet** with nothing from the host. The web's `/api/engine/*` proxy reads
+`ENGINE_ORIGIN` at runtime, so the same build points anywhere with no rebuild. **Full runbook:
+[`docs/deploy.md`](docs/deploy.md)** (Railway is covered as a host-agnostic alternative).
 
 ### Per-component (host toolchain)
 

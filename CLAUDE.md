@@ -176,15 +176,20 @@ Acknowledge this manual by creating the `STATUS.md` file, summarizing your stric
 public testnet), Phase 5.2 (desk auth + signed orders + demo-mode + receipt), and **Phase 6
 (Orchestration & Dockerization)** are complete. Phase 6 ships a root **`docker-compose.yml`**
 (postgres + one-shot `migrate` + engine + web) and a **`Makefile`**; `docker compose up` runs the
-whole stack with **in-container proving** (Node + snarkjs in the engine image, `circuits/build`
-bind-mounted). On-chain settle stays an opt-in host/testnet step (no `stellar` CLI in the image).
-The web image bakes `ENGINE_ORIGIN` at build time (Next bakes `rewrites()`) → `http://engine:8080`.
+whole stack with **in-container proving** (Node + snarkjs in the engine image). On-chain settle is an
+opt-in host/testnet step under `docker compose` (kept lean). _(§5.6 below superseded the original
+Phase-6 image details: `circuits/build` is now **baked** in, not bind-mounted; the hosted image bundles
+the `stellar` CLI + auto-funds; and the web proxy is a **runtime** route handler reading `ENGINE_ORIGIN`
+per request — no build-time `rewrites()`/build-arg.)_
 
 ### 5.5 Live testnet demo & multi-pair (post-Phase-6 polish, 2026-06-26)
 Two user-facing gaps were closed without changing engine logic:
-- **Live on-chain demo path.** Because the compose engine image has no `stellar` CLI, the Proofs
-  pipeline under `docker compose` stops at "Verifying on-chain" (`onchain_status` stays `pending`
-  by design — the proof is real and stored). For a demo where the pipeline *completes on-chain*,
+- **Live on-chain demo path.** Because `docker compose` leaves `NYX_SOROBAN_CONTRACT_ID` unset
+  (on-chain off by design), the Proofs pipeline under `docker compose` stops at "Verifying on-chain"
+  (`onchain_status` stays `pending` — the proof is real and stored). _(At the time this was written the
+  compose image also lacked the `stellar` CLI; §5.6 later added it to the Dockerfile, so compose can now
+  settle too if the contract id is set — but the default stays off.)_ For a demo where the pipeline
+  *completes on-chain*,
   **`scripts/demo_testnet.sh`** (`make demo`) runs the engine **on the host** with
   `NYX_SOROBAN_CONTRACT_ID` set to the deployed testnet verifier, so matches genuinely
   `verify_and_settle` on testnet (`onchain:true`). It reuses the deployed CID and redeploys +
@@ -200,8 +205,11 @@ Two user-facing gaps were closed without changing engine logic:
 - **The presenter runbook is `docs/demo-script.md`** (4 acts: solo settle, two-desk/two-tab manual
   cross, multi-pair, "how do I know it's real").
 
-### 5.6 Cloud deploy — Vercel web + Railway engine/PG (self-contained on-chain), 2026-06-26
-The stack is now deployable to the cloud with **on-chain settlement working and no host dependency**:
+### 5.6 Cloud deploy — Vercel web + Render engine/PG (self-contained on-chain), 2026-06-26
+The stack is **deployed live** with **on-chain settlement working and no host dependency** — web
+**<https://nyx-darkpool.vercel.app>** → engine **<https://nyx-engine.onrender.com>** (Render service
+`srv-d8v8f0po3t8c73f7c86g`). (Railway was the original plan; its free plan blocked provisioning, so the
+engine host is **Render** — the image is host-agnostic, so the runbook keeps Railway as an alternative.)
 - **Engine image is fully self-contained.** `engine/Dockerfile` now bakes the two runtime circuit
   artifacts (`circuits/build/darkpool_match_js/darkpool_match.wasm` + `darkpool_match_final.zkey`,
   force-tracked in git via `.gitignore`/`.dockerignore` negations — everything else under
@@ -212,10 +220,9 @@ The stack is now deployable to the cloud with **on-chain settlement working and 
   `docker run` matches, proves, and settles on testnet. No engine Go changes.
 - **Web → engine is a RUNTIME proxy.** Replaced the build-time Next `rewrites()` with a route handler
   `web/app/api/engine/[...path]/route.ts` that reads `ENGINE_ORIGIN` per request — so the same web
-  build runs on **Vercel** (→ Railway engine public URL) and in Docker/compose/Railway (→
-  `http://engine:8080`) with only an env var, no rebuild. `web/Dockerfile` dropped the build-ARG;
-  `docker-compose.yml` sets `ENGINE_ORIGIN` as a runtime env and no longer bind-mounts `circuits/build`
-  (now baked).
-- **Topology:** web → Vercel (GitHub-linked, public); engine + Postgres → Railway (engine public so
-  Vercel functions reach it; recommend `NYX_REQUIRE_ORDER_SIG=true`). Runbook: `docs/deploy.md`
-  (+ root `railway.json`). `make demo` (host) and off-chain `docker compose up` remain intact.
+  build runs on **Vercel** (→ Render engine public URL) and in Docker/compose (→ `http://engine:8080`)
+  with only an env var, no rebuild. `web/Dockerfile` dropped the build-ARG; `docker-compose.yml` sets
+  `ENGINE_ORIGIN` as a runtime env and no longer bind-mounts `circuits/build` (now baked).
+- **Topology:** web → Vercel (GitHub-linked, public); engine + Postgres → Render (engine public so
+  Vercel functions reach it; `NYX_REQUIRE_ORDER_SIG=true`). Runbook: `docs/deploy.md` (+ root
+  `render.yaml` Blueprint). `make demo` (host) and off-chain `docker compose up` remain intact.

@@ -14,7 +14,9 @@ _Last updated: 2026-06-26 (Phase 6 DONE; live demo + multi-pair DONE; **CLOUD DE
 > `https://nyx-darkpool.vercel.app/api/engine/orders` → matched → `has_proof:true` → **settled on
 > Stellar testnet** → tx `c103e539c3b3c3d13747d0feb16cd66f87eb5e6501db42da3344ca623777f94f`
 > (Horizon `successful:true`, ledger 3293883). The Render engine auto-funded its own testnet submitter
-> (`GC5BZPPP…KZZ5`) at boot — zero secrets. _Note: both hosts auto-deploy on push to `main`
+> (`GC5BZPPP…KZZ5`) at boot — zero secrets. **Test it:** walk every screen with
+> [`docs/test-checklist.md`](docs/test-checklist.md) (QA sweep); present it with
+> [`docs/demo-script.md`](docs/demo-script.md). _Note: both hosts auto-deploy on push to `main`
 > (Render `autoDeploy`, Vercel git-connected); if a future git-triggered Vercel build fails, confirm
 > Root Directory = `web` in the Vercel project settings._
 
@@ -101,6 +103,10 @@ via `docker-compose.yml` + `Makefile`. **All six numbered phases are now complet
   engine. `ENGINE_ORIGIN` is baked at **build** time (Next bakes `rewrites()`), so the web image is
   built with `--build-arg ENGINE_ORIGIN=http://engine:8080`; the proxy then returns live engine data
   (verified: `routes-manifest.json` → `http://engine:8080/:path*`). **PASS.**
+
+> ⏩ _Phase-6-era detail superseded by the **Cloud deploy** work below (2026-06-26): `circuits/build`
+> is now **baked** into the engine image (not bind-mounted), and the web proxy is a **runtime** route
+> handler reading `ENGINE_ORIGIN` per request (no `--build-arg`, no baked `rewrites()`)._
 - **Makefile:** `up/down/down-v/logs/ps/migrate/seed/circuits/contracts/test-all/...`. **`make` is
   not installed on the Windows dev host**, so each target was validated via its 1:1 `docker compose`/
   `bash`/`go` equivalent (the targets are thin wrappers). `cd engine && go test ./...` stays green;
@@ -115,10 +121,11 @@ Post-Phase-6 polish so the live UI completes the *full* pipeline (incl. on-chain
 control actually works. Two user-facing issues were diagnosed and addressed:
 
 1. **Proofs pipeline "stuck on Verifying on-chain", never reaching Atomic settlement.** Root cause:
-   under `docker compose` the engine image has **no `stellar` CLI** and `NYX_SOROBAN_CONTRACT_ID` is
-   unset, so on-chain settlement is off *by design* — `onchain_status` stays `pending` and the UI
-   (which only advances stages 3–4 on `confirmed`) spins forever. The proof itself is real and stored
-   (`has_proof:true`). **Fix:** a host-engine demo path with on-chain **on** —
+   under `docker compose` `NYX_SOROBAN_CONTRACT_ID` is unset (and, at the time, the image also lacked
+   the `stellar` CLI — later added in the Cloud deploy section), so on-chain settlement is off *by
+   design* — `onchain_status` stays `pending` and the UI (which only advances stages 3–4 on
+   `confirmed`) spins forever. The proof itself is real and stored (`has_proof:true`). **Fix:** a
+   host-engine demo path with on-chain **on** —
    [`scripts/demo_testnet.sh`](scripts/demo_testnet.sh) + `make demo` (compose UX left untouched, per
    decision "Real testnet only").
 2. **Pair dropdown frozen on US-TBILL-26/USDC.** It was a static `<div>` (no `<select>`). **Fix:** a
@@ -157,13 +164,15 @@ plus a DB-port robustness fix (`docker-compose.demo.yml`, below).
 solo settle, two-desk/two-tab manual cross, "how do I know it's real"). `docker compose up` remains
 the fast off-chain stack; `make demo` is the real-on-chain demo.
 
-### Cloud deploy — Vercel web + Railway engine/PG (self-contained on-chain) — 2026-06-26
+### Cloud deploy — Vercel web + Render engine/PG (self-contained on-chain) — 2026-06-26
 Makes the stack deployable to the cloud with **on-chain settlement working and zero host dependency**
 (a judge opens a URL — no `make demo` on our laptop). Decisions: on-chain key = **auto-generate +
 friendbot-fund** (zero secrets); web→engine = **runtime proxy** (env-configurable, no rebuild); split
-= **web→Vercel (GitHub-linked), engine+Postgres→Railway**.
+= **web→Vercel (GitHub-linked), engine+Postgres→Render** (Railway was the original plan; its free plan
+blocked provisioning — see the LIVE callout at the top + the "Deploy hosting" note below).
 
-**Commits:** `<this batch>` — engine self-containment, runtime proxy, deploy docs.
+**Commits:** `a3e4bbc` (engine self-containment) · `9e7981a` (runtime proxy) · `aa5bfdf` (verified
+image + `render.yaml`) · `a7d2bf1` (deploy docs).
 
 - **Engine image is self-contained (`engine/Dockerfile`).** Bakes the two runtime circuit artifacts
   (`darkpool_match.wasm` 1.8 MB + `darkpool_match_final.zkey` 698 KB — force-tracked via
@@ -183,8 +192,9 @@ friendbot-fund** (zero secrets); web→engine = **runtime proxy** (env-configura
   `docker-compose.yml` sets `ENGINE_ORIGIN` at runtime and no longer bind-mounts `circuits/build`.
 - **Offline regression:** `go vet ./... && go test ./...` green (no engine code changed);
   `cd web && npm run build` green (14 routes + the new dynamic proxy).
-- **Runbook:** [`docs/deploy.md`](docs/deploy.md) (Vercel web + Railway engine/PG, env tables,
-  friendbot/auto-fund, testnet-reset → redeploy-CID, all-Railway alternative) + root `railway.json`.
+- **Runbook:** [`docs/deploy.md`](docs/deploy.md) (Vercel web + Render engine/PG, env tables,
+  friendbot/auto-fund, testnet-reset → redeploy-CID; Railway/Fly as host-agnostic alternatives) + root
+  `render.yaml` Blueprint.
 
 - **Self-contained image — BUILT + on-chain settle VERIFIED from a bare container.**
   `docker build -f engine/Dockerfile -t nyx-engine-cloud .` succeeds; `docker run` it with **no

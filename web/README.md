@@ -21,9 +21,12 @@ if it runs elsewhere (`cp .env.example .env.local`). Without the engine, `/app` 
 loading/empty states.
 
 **Whole stack in one command:** from the repo root, `docker compose up -d` (or `make up`) builds
-this app as a Next **standalone** image and runs it alongside the engine + Postgres. Note Next bakes
-`rewrites()` at build time, so the image is built with `--build-arg ENGINE_ORIGIN=http://engine:8080`
-(see [`Dockerfile`](./Dockerfile) and [`../docker-compose.yml`](../docker-compose.yml)).
+this app as a Next **standalone** image and runs it alongside the engine + Postgres. `ENGINE_ORIGIN`
+is read **at runtime** by the proxy route handler (`app/api/engine/[...path]/route.ts`), so the same
+image is portable across environments with only an env var, no rebuild — `docker compose` sets it to
+`http://engine:8080`, Vercel sets it to the engine's public URL (see [`Dockerfile`](./Dockerfile) and
+[`../docker-compose.yml`](../docker-compose.yml)). **Deployed live** on Vercel →
+[`../docs/deploy.md`](../docs/deploy.md).
 
 ## Routes
 
@@ -73,10 +76,12 @@ and poll live state; the shell/layout stays a Server Component.
 
 ### Wired to the engine (Phase 5.1)
 
-- **Proxy, not CORS.** Client code only ever fetches relative `/api/engine/*`; `next.config.mjs`
-  rewrites that to **`ENGINE_ORIGIN`** (default `http://localhost:8080`). Works in `next dev` and
-  `next start`; the engine needs no CORS and stays private to the Next server. Copy `.env.example`
-  → `.env.local` to point at a different engine. The typed client is `app/_lib/engine.ts`.
+- **Proxy, not CORS.** Client code only ever fetches relative `/api/engine/*`; a **route handler**
+  (`app/api/engine/[...path]/route.ts`) reads **`ENGINE_ORIGIN`** (default `http://localhost:8080`)
+  **per request** and forwards server-side. Works identically in `next dev`, `next start`, **and as a
+  Vercel serverless function**; the engine needs no CORS and stays private. Set `ENGINE_ORIGIN` (env,
+  or `.env.local` from `.env.example`) to point at any engine — no rebuild. The typed client is
+  `app/_lib/engine.ts`.
 - **Compose seals for real.** `app/_lib/seal.ts` computes the **actual Poseidon commitment**
   (`circomlibjs`, the same lib + constants as `circuits/scripts/gen_input.js`) over
   `[price, volume, salt]`, so a frontend-sealed order is genuinely provable. **Price is scaled ×100**
@@ -131,11 +136,11 @@ The Settled screen's **Download receipt** button saves a JSON settlement receipt
 (`nyx-receipt-<match>.json`) with the match, on-chain status, tx, and explorer link.
 
 > **Completing the on-chain leg.** The Proofs pipeline's last two stages ("Verifying on-chain" →
-> "Atomic settlement") only go DONE when the engine reports `onchain_status: confirmed`. That happens
-> only when the engine runs with on-chain settlement enabled — the **host** demo engine
-> (`make demo` / `scripts/demo_testnet.sh`), **not** the `docker compose` engine (whose image has no
-> `stellar` CLI, so `onchain_status` stays `pending` and those two stages spin by design). For a live
-> end-to-end demo with a real, browsable settlement tx, follow [`../docs/demo-script.md`](../docs/demo-script.md).
+> "Atomic settlement") only go DONE when the engine reports `onchain_status: confirmed`, which needs
+> on-chain settlement **enabled** (`NYX_SOROBAN_CONTRACT_ID` set). That's the case on the **live
+> deployment** (<https://nyx-darkpool.vercel.app>) and with `make demo`; plain `docker compose` leaves
+> it unset, so those two stages spin `pending` by design. For a live end-to-end demo with a real,
+> browsable settlement tx, open the live site or follow [`../docs/demo-script.md`](../docs/demo-script.md).
 
 ## Layout
 

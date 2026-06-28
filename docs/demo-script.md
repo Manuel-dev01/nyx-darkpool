@@ -45,11 +45,12 @@ Open **http://localhost:3000**.
 `scripts/deploy_contract.sh` to redeploy and friendbot-fund the identity, then prints the new CID.
 Just re-run `make demo` and update the explorer link you show.
 
-> **Why not `docker compose up`?** That's the fast, fully-containerized stack — but the engine image
-> deliberately ships **no `stellar` CLI**, so on-chain settlement is off there and the pipeline stops
-> after the proof is stored (`onchain_status: pending` by design). For the *live* demo you want the
-> host engine (`make demo`) so the chain leg actually fires. Both prove the proof in-process; only
-> `make demo` settles on testnet.
+> **Why not `docker compose up`?** That's the fast, fully-containerized stack — but it leaves
+> `NYX_SOROBAN_CONTRACT_ID` **unset**, so on-chain settlement is off there and the pipeline stops after
+> the proof is stored (`onchain_status: pending` by design). For the *live* demo you want the chain leg
+> to actually fire: use `make demo` (host engine with the contract id set), or just open the **live
+> deployment** (<https://nyx-darkpool.vercel.app>), which settles on testnet out of the box. Both prove
+> the proof in-process; on-chain settles wherever `NYX_SOROBAN_CONTRACT_ID` is set.
 
 ---
 
