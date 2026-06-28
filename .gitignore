@@ -61,6 +61,11 @@ Cargo.lock.orig
 # build artifact; also caught by the global *.exe rule above).
 /scripts/bin/
 
+# ─── Playwright (web e2e) ──────────────────────────────────────────────────
+test-results/
+playwright-report/
+.playwright/
+
 # ─── Logs ──────────────────────────────────────────────────────────────────
 *.log
 logs/
