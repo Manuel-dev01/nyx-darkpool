@@ -93,8 +93,9 @@ and poll live state; the shell/layout stays a Server Component.
   `asset_pair` and threaded through the active-order meta into Pool/Proofs/Settled and the demo-mode
   counterparty. The engine matches **per pair**, so a manual two-desk cross requires both desks to
   pick the **same** pair (different pairs never cross).
-- **Live screens poll.** Desk renders `GET /orders` (counts + table + activity); Pool shows the open
-  commitments as the lattice + your active order; Proofs/Settled follow the active order's `match_id`
+- **Live screens poll.** Desk renders `GET /orders` **filtered to your desk's pubkey** (counts + table
+  + activity are this desk's own orders — the global, anonymized book is the Pool lattice); Pool shows
+  the open commitments as the lattice + your active order; Proofs/Settled follow the active order's `match_id`
   → `GET /matches/{id}` to drive the pipeline and show the on-chain status + a **stellar.expert
   testnet** link for the settlement tx. Price/size are never returned by the API (they stay sealed).
 
