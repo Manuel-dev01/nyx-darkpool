@@ -116,6 +116,34 @@ func (c Config) ResolveAddress(ctx context.Context) (string, error) {
 	return strings.TrimSpace(string(out)), nil
 }
 
+// IsSettled queries the deployed verifier's read-only is_settled(maker_hash,
+// taker_hash) — true iff this match's two public commitments were already
+// verified + settled on-chain. The matcher uses it to make settlement
+// idempotent: if a prior attempt's tx landed but the engine crashed before
+// recording it, re-settlement is skipped (a re-submit would hit the contract's
+// AlreadySettled anti-replay). makerHash/takerHash are the 0x-hex public inputs.
+func (c Config) IsSettled(ctx context.Context, makerHash, takerHash string) (bool, error) {
+	if !c.Enabled {
+		return false, errors.New("onchain: bridge disabled (NYX_SOROBAN_CONTRACT_ID unset)")
+	}
+	args := []string{
+		"contract", "invoke",
+		"--id", c.ContractID,
+		"--source-account", c.Source,
+		"--network", c.Network,
+		"--",
+		"is_settled",
+		"--maker_hash", strip0x(makerHash),
+		"--taker_hash", strip0x(takerHash),
+	}
+	out, err := exec.CommandContext(ctx, c.Bin, args...).CombinedOutput()
+	if err != nil {
+		return false, fmt.Errorf("onchain: is_settled: %w\n%s", err, string(out))
+	}
+	// A read-only invoke prints the bool result (e.g. "true"); be lenient on whitespace.
+	return strings.Contains(strings.ToLower(string(out)), "true"), nil
+}
+
 func strip0x(s string) string { return strings.TrimPrefix(s, "0x") }
 
 // txHashRe matches a 64-hex-character Stellar transaction hash. The stellar CLI

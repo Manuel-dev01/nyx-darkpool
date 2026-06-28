@@ -42,8 +42,13 @@ services:
         value: "true"
       - key: NYX_LOG_LEVEL
         value: info
-      # Optional: set a persistent 64-hex key so orders survive restarts. Leave
-      # unset for an ephemeral key (no secret on disk). Set in the Render dashboard
-      # as a secret rather than committing it here.
-      # - key: NYX_BLOB_KEY
-      #   sync: false
+      # Persistent at-rest key so resting orders survive a restart. Render free
+      # services SLEEP after ~15 min idle and cold-start as a fresh container — an
+      # ephemeral key would be lost, making any order that rested across the sleep
+      # undecodable (silently unmatchable). `sync: false` means "set me in the
+      # Render dashboard, don't read from git" — paste a 64-hex (32-byte) secret
+      # there once (e.g. `openssl rand -hex 32`). It's a cloud secret, never on
+      # disk in the repo. Leave the dashboard value blank to fall back to an
+      # ephemeral key (fine for a quick demo; orders die on the next sleep).
+      - key: NYX_BLOB_KEY
+        sync: false

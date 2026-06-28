@@ -64,9 +64,14 @@ type Matcher struct {
 	cfg     Config
 	logger  *slog.Logger
 
-	inflight sync.Map // match id -> struct{}{} : dispatched, not yet finished
-	failures sync.Map // match id -> int        : consecutive proof failures
+	inflight  sync.Map // match id -> struct{}{} : dispatched, not yet finished
+	failures  sync.Map // match id -> int        : consecutive prove/settle failures
+	abandoned sync.Map // match id -> struct{}{} : abandon already logged (log once)
 }
+
+// proofTimeout bounds a single snarkjs proof generation so a hung/pathological
+// witness calc can't pin a worker forever.
+const proofTimeout = 120 * time.Second
 
 // New constructs a Matcher. prover may be nil to disable proof generation.
 func New(st *store.Store, prover Prover, oc onchain.Config, cfg Config, logger *slog.Logger) *Matcher {
@@ -131,14 +136,27 @@ func (m *Matcher) tick(ctx context.Context, jobs chan<- string) {
 		m.logger.Debug("matched orders this cycle", "count", n)
 	}
 
-	ids, err := m.store.UnprovenMatchIDs(ctx, m.cfg.BatchSize)
+	// With on-chain settlement on, dispatch every match not yet CONFIRMED so a
+	// proven-but-unsettled match (engine restarted mid-settle, or a transient
+	// settle failure) is retried — not stuck "verifying on-chain" forever. With
+	// on-chain off, proving is the terminal step, so scan unproven matches only.
+	var ids []string
+	var err error
+	if m.onchain.Enabled {
+		ids, err = m.store.UnsettledMatchIDs(ctx, m.cfg.BatchSize)
+	} else {
+		ids, err = m.store.UnprovenMatchIDs(ctx, m.cfg.BatchSize)
+	}
 	if err != nil {
-		m.logger.Error("scan unproven matches", "error", err)
+		m.logger.Error("scan matches to process", "error", err)
 		return
 	}
 	for _, id := range ids {
 		if m.attempts(id) >= maxProofAttempts {
-			continue // abandoned
+			if _, seen := m.abandoned.LoadOrStore(id, struct{}{}); !seen {
+				m.logger.Error("match abandoned after repeated failures", "match_id", id, "attempts", m.attempts(id))
+			}
+			continue // abandoned (until restart resets the counter)
 		}
 		if _, loaded := m.inflight.LoadOrStore(id, struct{}{}); loaded {
 			continue // already dispatched
@@ -193,21 +211,23 @@ func (m *Matcher) proveAndSettle(ctx context.Context, matchID string) {
 
 	maker, taker, err := m.store.MatchOrders(ctx, matchID)
 	if err != nil {
-		m.logger.Error("load match orders", "match_id", matchID, "error", err)
+		// Most likely an undecodable blob (lost ephemeral key on restart). Count
+		// it so a permanently un-loadable match is abandoned, not hot-looped every
+		// tick — and so the abandon is surfaced.
+		n := m.bumpFailure(matchID)
+		m.logger.Log(ctx, failLevel(n), "load match orders failed", "match_id", matchID, "attempt", n, "error", err)
 		return
 	}
 
-	res, err := m.prover.Generate(ctx, prove.InputFor(maker, taker))
+	// Bound a single proof so a hung snarkjs can't pin this worker indefinitely.
+	genCtx, cancel := context.WithTimeout(ctx, proofTimeout)
+	res, err := m.prover.Generate(genCtx, prove.InputFor(maker, taker))
+	cancel()
 	if err != nil {
 		n := m.bumpFailure(matchID)
-		level := slog.LevelWarn
-		if n >= maxProofAttempts {
-			level = slog.LevelError
-		}
-		m.logger.Log(ctx, level, "proof generation failed", "match_id", matchID, "attempt", n, "error", err)
+		m.logger.Log(ctx, failLevel(n), "proof generation failed", "match_id", matchID, "attempt", n, "error", err)
 		return
 	}
-	m.failures.Delete(matchID)
 
 	if err := m.store.SetProof(ctx, matchID, res.ProofJSON); err != nil {
 		m.logger.Error("store proof", "match_id", matchID, "error", err)
@@ -216,18 +236,31 @@ func (m *Matcher) proveAndSettle(ctx context.Context, matchID string) {
 	m.logger.Info("proof generated", "match_id", matchID, "bytes", len(res.ProofJSON))
 
 	if !m.onchain.Enabled {
+		m.failures.Delete(matchID) // proof is the terminal success when on-chain is off
 		return
 	}
+	// On-chain is the terminal step: keep the failure counter until confirmed, so
+	// settle retries are bounded across ticks (settleOnchain clears it on success).
 	m.settleOnchain(ctx, matchID, res)
 }
 
-// settleOnchain converts the proof to BN254 bytes and invokes the deployed
-// Soroban verify_and_settle, recording the outcome.
-func (m *Matcher) settleOnchain(ctx context.Context, matchID string, res prove.Result) {
-	_ = m.store.SetOnchain(ctx, matchID, "submitted", "")
+// failLevel escalates a retry log from warn to error once the attempt cap is hit.
+func failLevel(attempt int) slog.Level {
+	if attempt >= maxProofAttempts {
+		return slog.LevelError
+	}
+	return slog.LevelWarn
+}
 
+// settleOnchain converts the proof to BN254 bytes and invokes the deployed
+// Soroban verify_and_settle, recording the outcome. It is idempotent and
+// retry-safe: it first checks the contract's is_settled (so a prior attempt's
+// landed tx isn't double-submitted), marks 'submitted' only just before the call,
+// and on failure bumps the shared attempt counter so retries are bounded.
+func (m *Matcher) settleOnchain(ctx context.Context, matchID string, res prove.Result) {
 	fail := func(stage string, err error) {
-		m.logger.Error("on-chain settle failed", "match_id", matchID, "stage", stage, "error", err)
+		n := m.bumpFailure(matchID)
+		m.logger.Log(ctx, failLevel(n), "on-chain settle failed", "match_id", matchID, "stage", stage, "attempt", n, "error", err)
 		_ = m.store.SetOnchain(ctx, matchID, "failed", "")
 	}
 
@@ -241,11 +274,29 @@ func (m *Matcher) settleOnchain(ctx context.Context, matchID string, res prove.R
 		fail("to-hex", err)
 		return
 	}
+
+	// Idempotency: if this match already settled on-chain (a prior attempt's tx
+	// landed but we crashed/failed before recording it), don't re-submit — that
+	// would hit the contract's AlreadySettled anti-replay. Record confirmed.
+	if len(hexProof.Public) >= 2 {
+		if done, e := m.onchain.IsSettled(ctx, hexProof.Public[0], hexProof.Public[1]); e == nil && done {
+			m.failures.Delete(matchID)
+			if err := m.store.SetOnchain(ctx, matchID, "confirmed", ""); err != nil {
+				m.logger.Error("record settlement", "match_id", matchID, "error", err)
+				return
+			}
+			m.logger.Info("on-chain already settled (idempotent re-check)", "match_id", matchID)
+			return
+		}
+	}
+
+	_ = m.store.SetOnchain(ctx, matchID, "submitted", "")
 	tx, err := m.onchain.VerifyAndSettle(ctx, submitter, hexProof)
 	if err != nil {
 		fail("verify-and-settle", err)
 		return
 	}
+	m.failures.Delete(matchID)
 	if err := m.store.SetOnchain(ctx, matchID, "confirmed", tx); err != nil {
 		m.logger.Error("record settlement", "match_id", matchID, "error", err)
 		return

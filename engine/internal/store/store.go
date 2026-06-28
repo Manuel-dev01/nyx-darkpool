@@ -13,6 +13,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -120,6 +121,7 @@ func (s *Store) OpenOrdersByPair(ctx context.Context, pair string) ([]order.Orde
 	defer rows.Close()
 
 	var out []order.Order
+	var skipped int
 	for rows.Next() {
 		var (
 			o    order.Order
@@ -135,10 +137,18 @@ func (s *Store) OpenOrdersByPair(ctx context.Context, pair string) ([]order.Orde
 		}
 		payload, err := s.decodeBlob(blob)
 		if err != nil {
+			// Undecodable blob — most often an order sealed under a previous
+			// EPHEMERAL key that was lost on restart (set NYX_BLOB_KEY to persist).
+			// Skip it (it can't be matched/proven) but surface it, since otherwise
+			// the order would silently vanish from the book.
+			skipped++
 			continue
 		}
 		o.Payload = payload
 		out = append(out, o)
+	}
+	if skipped > 0 {
+		slog.Warn("skipped undecodable open orders (lost blob key? set NYX_BLOB_KEY)", "pair", pair, "count", skipped)
 	}
 	return out, rows.Err()
 }
@@ -183,6 +193,30 @@ func (s *Store) UnprovenMatchIDs(ctx context.Context, limit int) ([]string, erro
 		`SELECT id FROM matches WHERE proof_blob IS NULL ORDER BY created_at LIMIT $1`, limit)
 	if err != nil {
 		return nil, fmt.Errorf("store: unproven matches: %w", err)
+	}
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
+// UnsettledMatchIDs returns matches not yet confirmed on-chain (onchain_status
+// other than 'confirmed'), oldest first, capped at limit. Used when on-chain
+// settlement is enabled: it covers unproven matches AND proven-but-unsettled
+// ones (engine restarted mid-settle, or a transient settle failure), so a match
+// is re-dispatched and retried rather than stuck "verifying on-chain" forever.
+func (s *Store) UnsettledMatchIDs(ctx context.Context, limit int) ([]string, error) {
+	rows, err := s.db.Pool.Query(ctx,
+		`SELECT id FROM matches WHERE onchain_status <> 'confirmed'::onchain_status
+		   ORDER BY created_at LIMIT $1`, limit)
+	if err != nil {
+		return nil, fmt.Errorf("store: unsettled matches: %w", err)
 	}
 	defer rows.Close()
 	var ids []string
