@@ -9,6 +9,15 @@ This is the **tester's** sweep — distinct from [`demo-script.md`](demo-script.
 - **Live web:** <https://nyx-darkpool.vercel.app>
 - **Live engine API:** <https://nyx-engine.onrender.com> (the web reaches it via `/api/engine/*`)
 
+> **Automated suites (run these first — they cover most of §9 and §4–§7):**
+> - **API/pipeline:** `node scripts/e2e_live.mjs` — signed full pipeline (match → prove → settle →
+>   Horizon SUCCESS) + every negative (401/400/409) + multi-pair isolation + the full-fill rule +
+>   no-value-leak. Point elsewhere with `ENGINE_URL=…`.
+> - **Browser:** `cd web && npm run e2e` — drives the real UI (access → compose → pool → proofs →
+>   settled) in system Chrome. Local: `E2E_BASE_URL=http://localhost:3000 npm run e2e`.
+>
+> The boxes below are the **manual** sweep for things the suites can't judge (layout, copy, feel).
+
 ---
 
 ## 0. Pre-flight
@@ -27,8 +36,7 @@ This is the **tester's** sweep — distinct from [`demo-script.md`](demo-script.
 - [ ] Nav **Protocol** / **Proofs** smooth-scroll to the right sections.
 - [ ] Nav **Docs** / hero **Read the spec** open the GitHub repo in a new tab.
 - [ ] **Enter the pool** / **Request desk access** route to `/app/access`.
-- [ ] *Known placeholder:* the **Talk to us / contact** link is a `mailto:` to a placeholder address
-      (set in `app/page.tsx`) — fine to flag, not a functional bug.
+- [ ] **Talk to us** opens the repo's **issues** page (no longer a dead `mailto:`).
 - [ ] Resize to mobile width (≤ 768px): layout reflows, no horizontal scroll.
 
 ## 2. Desk access (`/app/access`)
@@ -45,8 +53,10 @@ This is the **tester's** sweep — distinct from [`demo-script.md`](demo-script.
 
 - [ ] Loads only when authenticated; visiting `/app/*` with no desk redirects to `/app/access`
       (brief “AUTHENTICATING…”).
-- [ ] Stat cells (Open / Matched / Settled / Total) + **Activity** feed render and **poll ~every 3 s**
-      (post an order elsewhere → counts update without a manual refresh).
+- [ ] Stat cells (Open / Matched / Settled / Total) + **Activity** feed render and **poll ~every 3 s**.
+- [ ] **The Desk shows only THIS desk's own orders** (scoped to your pubkey) — a brand-new key shows an
+      empty desk (`// no orders from this desk yet`); two different keys show **different** desks. (The
+      global, anonymized book is the **Pool** lattice, not the Desk.)
 - [ ] Orders table shows PAIR / SIDE (BID green, ASK red) / COMMITMENT / STATUS — **no price or size**.
 - [ ] If the engine is asleep/unreachable, the table shows an `engine unreachable: …` state (then
       recovers after the cold start).
@@ -64,8 +74,11 @@ This is the **tester's** sweep — distinct from [`demo-script.md`](demo-script.
   - [ ] size `5.5` → “invalid size” (integers only).
   - [ ] *Accepted:* price `99.84` → scaled to `9984` (×100); size `5,000,000` / `5 000 000` →
         `5000000` (separators stripped).
+- [ ] Seal preview notes the **full-fill model** ("a counter must match this exact size to cross").
 - [ ] **Seal & broadcast →** with valid input: button shows “Broadcasting…”, then routes to
       `/app/pool?order=<id>`. The order is **signed** automatically (the live engine requires it).
+- [ ] **Double-click** Seal & broadcast fast → only **one** order is created (no "nullifier already
+      used" error); a genuine duplicate shows the friendly "already broadcast — view it in the pool".
 
 ## 5. Pool (`/app/pool`)
 
@@ -98,6 +111,11 @@ Watch the 4-stage pipeline (polls ~every 2.5 s). On the **live** site all four r
       **omitting price/size** (note: “Price and size are sealed off-chain”).
 
 ## 8. Multi-desk / multi-tab (the real institutional flow)
+
+> **Use two SEPARATE storage contexts** — a normal window **and** an Incognito/Private window (or two
+> different browsers / Chrome profiles). The desk key lives in `localStorage`, which **all tabs of the
+> same browser profile share** — so two tabs of the *same* profile are the *same* desk (generating a
+> new key in one overwrites the other). Separate profiles = separate desks.
 
 - [ ] In **both** windows, toggle **Demo-Mode OFF** (sidebar).
 - [ ] **Window A** (Desk 1): generate a key → compose **BID** `US-TBILL-26/USDC` `99.84 × 5,000,000` →
@@ -134,12 +152,13 @@ curl -s -X POST https://nyx-engine.onrender.com/orders -H 'Content-Type: applica
 
 | Behaviour | Why |
 |-----------|-----|
-| First request after idle takes ~1 min | Render free tier cold start |
+| First request after idle takes ~1 min, or returns `engine waking up (cold start)` | Render free tier cold start — the proxy now times out cleanly (~50 s) with that message instead of hanging; retry |
 | Proof ~3–10 s, on-chain ~5–15 s | snarkjs witness + a real testnet ledger close |
 | Demo-Mode ON auto-fills a counterparty | demo convenience; turn OFF for a true two-desk cross |
+| Two tabs of the **same** browser show the **same** desk | `localStorage` is shared per profile — use separate profiles/Incognito for two desks (§8) |
+| Unequal-size orders on the same pair never cross | **full-fill model** — sizes must match exactly (noted in Compose) |
 | TIF buttons (GTC/IOC/1H) don't change matching | visual only; not yet enforced |
 | `/app/positions` is a placeholder | "Coming soon" by design |
-| Landing contact link goes nowhere | placeholder `mailto:` address |
 | Desk secret lives in `localStorage` | documented demo seam (prod = Freighter) — see [`key-custody.md`](key-custody.md) |
 | `docker compose up` never reaches "Settled" | on-chain is off there by design — use the live site or `make demo` |
 

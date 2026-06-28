@@ -5,7 +5,7 @@
 > starting a phase and to `DONE` (with the commit short-hash) after a phase compiles,
 > passes validation, and is committed.
 
-_Last updated: 2026-06-26 (Phase 6 DONE; live demo + multi-pair DONE; **CLOUD DEPLOY LIVE — web on Vercel + engine/PG on Render, on-chain settlement verified through the public URL**)_
+_Last updated: 2026-06-28 (CLOUD DEPLOY LIVE — Vercel web + Render engine/PG; **E2E test campaign DONE — bugs fixed (crash-safe on-chain retry, persistent blob key, proxy cold-start timeout, …) + API + Playwright suites; API E2E 9/9 green on live**)_
 
 > **🌐 LIVE deployment (2026-06-26):** web **<https://nyx-darkpool.vercel.app>** (Vercel, GitHub-linked
 > → auto-deploys) → engine **<https://nyx-engine.onrender.com>** (Render `srv-d8v8f0po3t8c73f7c86g`,
@@ -163,6 +163,42 @@ plus a DB-port robustness fix (`docker-compose.demo.yml`, below).
 **The live demo path** is documented in [`docs/demo-script.md`](docs/demo-script.md) (4-act runbook:
 solo settle, two-desk/two-tab manual cross, "how do I know it's real"). `docker compose up` remains
 the fast off-chain stack; `make demo` is the real-on-chain demo.
+
+### E2E test campaign + bug fixes — 2026-06-28
+An exhaustive end-to-end pass on the live deploy (a 3-agent code audit + verification) surfaced real
+bugs; all confirmed ones fixed, plus two reusable automated test suites.
+
+**Engine (need a push → Render auto-deploy):**
+- **E1 · crash-safe + retried on-chain settle.** `settleOnchain` ran only right after proving and the
+  matcher only re-scanned `proof_blob IS NULL`, so a proven-but-unsettled match (Render slept mid-settle
+  or a transient testnet error) was **never retried → "Verifying on-chain" stuck forever**. Now: when
+  on-chain is enabled the matcher dispatches `store.UnsettledMatchIDs` (`onchain_status <> 'confirmed'`),
+  re-proves + re-settles, **guarded by the contract's `is_settled`** (`onchain.IsSettled`) so an
+  already-landed tx isn't double-submitted; attempt-bounded; abandons are logged.
+- **E2 · persistent blob key.** `render.yaml` now declares `NYX_BLOB_KEY` with `sync: false` (set a
+  64-hex secret in the Render dashboard) so resting orders survive a free-tier sleep/restart (an
+  ephemeral key would lose them — silently). [[onchain-was-local-only]]
+- **E3/E4 · observability + safety:** log undecodable-order skips (lost-key) + abandoned matches; bound
+  a single proof with a 120 s timeout so a hung snarkjs can't pin a worker.
+
+**Web (deployed via Vercel CLI):**
+- **W1 · proxy cold-start timeout** (`route.ts`): a 50 s `AbortController` → `504 "engine waking up"`
+  instead of a silent 60 s+ hang. **W2 · compose double-submit** ref guard + friendly 409 message.
+  **W3 · full-fill hint** in Compose (unequal sizes never cross). Plus: contact link → repo issues
+  (not a dead mailbox); stale comment fixes.
+
+**Verified false-positives (no change):** negative-price (already rejected), match-404 (getMatch
+already returns null), Proofs FAILED state (already handled), Positions route (exists), demo-mode
+double-counter (guarded).
+
+**Test suites (new):**
+- `scripts/e2e_live.mjs` — API/pipeline E2E: **9/9 green** against the live engine (signed full pipeline
+  → real settle tx `740ae475…` ledger 3332249, all 401/400/409 negatives, multi-pair isolation,
+  full-fill rule, no-value-leak).
+- `web/e2e/*.spec.ts` + `playwright.config.ts` — browser E2E (system Chrome, no Chromium download):
+  access → compose → pool → proofs → settled + a negative-input case. `cd web && npm run e2e`.
+
+Offline regression: `go vet ./... && go test ./...` and `npm run build` green.
 
 ### Cloud deploy — Vercel web + Render engine/PG (self-contained on-chain) — 2026-06-26
 Makes the stack deployable to the cloud with **on-chain settlement working and zero host dependency**
