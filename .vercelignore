@@ -1,0 +1,19 @@
+# Vercel builds ONLY the web/ app (the project's Root Directory = web). This is a
+# monorepo, so exclude the backend + tooling from Vercel deployments — they're
+# never needed for the Next.js build, and excluding them keeps git/CLI deploys
+# lean. (web/ and its contents are intentionally NOT ignored.)
+/engine
+/contracts
+/circuits
+/scripts
+/docs
+/design-src
+/.claude
+/.github
+/Makefile
+/docker-compose.yml
+/docker-compose.demo.yml
+/render.yaml
+/railway.json
+/.dockerignore
+*.md
