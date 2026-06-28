@@ -3,8 +3,8 @@
 // The browser only ever calls same-origin `/api/engine/*`; this handler forwards
 // each request server-side to the engine at `ENGINE_ORIGIN` (read at REQUEST time,
 // not build time). That makes the deployment portable: set ENGINE_ORIGIN as a
-// plain env var on Vercel (→ the Railway engine's public URL) or in Docker/Railway
-// (→ http://engine:8080 / the private domain) and change it anytime, no rebuild.
+// plain env var on Vercel (→ the Render engine's public URL) or in Docker/compose
+// (→ http://engine:8080 / a private domain) and change it anytime, no rebuild.
 //
 // This replaces the old next.config `rewrites()` (which baked the engine origin
 // into the build). No CORS is involved — the browser talks only to this origin.
@@ -19,6 +19,11 @@ function engineOrigin(): string {
   return (process.env.ENGINE_ORIGIN ?? "http://localhost:8080").replace(/\/+$/, "");
 }
 
+// Upper bound on a single upstream call. A free-tier engine (e.g. Render) sleeps
+// when idle and cold-starts in ~1 min; without a bound the proxy would hang
+// silently. We give cold-starts room but fail clearly instead of blocking forever.
+const UPSTREAM_TIMEOUT_MS = 50_000;
+
 async function proxy(req: NextRequest, path: string[]): Promise<Response> {
   const target = `${engineOrigin()}/${path.map(encodeURIComponent).join("/")}${req.nextUrl.search}`;
 
@@ -29,10 +34,13 @@ async function proxy(req: NextRequest, path: string[]): Promise<Response> {
   if (accept) headers.set("accept", accept);
 
   const hasBody = req.method !== "GET" && req.method !== "HEAD";
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), UPSTREAM_TIMEOUT_MS);
   const init: RequestInit = {
     method: req.method,
     headers,
     cache: "no-store",
+    signal: ctrl.signal,
     ...(hasBody ? { body: await req.text() } : {}),
   };
 
@@ -40,11 +48,21 @@ async function proxy(req: NextRequest, path: string[]): Promise<Response> {
   try {
     upstream = await fetch(target, init);
   } catch (e) {
+    // Distinguish a timeout (likely a sleeping engine cold-starting) from a hard
+    // connection failure, so the UI can show a "retry in a moment" message.
+    if (ctrl.signal.aborted) {
+      return Response.json(
+        { error: "engine waking up (cold start) — retry in a moment" },
+        { status: 504 },
+      );
+    }
     // Engine unreachable (wrong ENGINE_ORIGIN, engine down) — surface a clear 502.
     return Response.json(
       { error: "engine unreachable", detail: e instanceof Error ? e.message : String(e) },
       { status: 502 },
     );
+  } finally {
+    clearTimeout(timer);
   }
 
   const body = await upstream.arrayBuffer();

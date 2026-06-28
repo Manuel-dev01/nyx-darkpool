@@ -1,7 +1,8 @@
 // Typed client for the Nyx engine HTTP API. All calls go to the relative
-// /api/engine/* path, which next.config.mjs proxies to the Go engine — so this
-// works identically in the browser during `next dev` and `next start`, with no
-// CORS and no hard-coded engine origin in client code.
+// /api/engine/* path, which the route handler app/api/engine/[...path]/route.ts
+// proxies to the Go engine (reading ENGINE_ORIGIN at request time) — so this works
+// identically in `next dev`, `next start`, and on Vercel, with no CORS and no
+// hard-coded engine origin in client code.
 
 const BASE = "/api/engine";
 

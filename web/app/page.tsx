@@ -17,7 +17,9 @@ export const metadata: Metadata = {
 */
 
 const REPO = "https://github.com/Manuel-dev01/nyx-darkpool";
-const CONTACT = "mailto:desk@nyxdarkpool.xyz"; // placeholder — set to the real desk contact
+// "Talk to us" points at the repo's issues so it's never a dead mailbox. Swap for
+// a real `mailto:` once there's a monitored desk contact.
+const CONTACT = `${REPO}/issues`;
 
 const serif = "'Spectral', serif";
 const body = "'Archivo', sans-serif";

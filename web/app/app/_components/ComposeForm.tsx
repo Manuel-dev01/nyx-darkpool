@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { seal, type Sealed } from "../../_lib/seal";
 import { createOrder } from "../../_lib/engine";
@@ -46,6 +46,10 @@ export function ComposeForm() {
   const [sealErr, setSealErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
+  // Atomic in-flight guard: `busy` state updates async, so a rapid double-click
+  // could fire two broadcasts (the 2nd reusing the same commitment → a 409). A
+  // ref flips synchronously and blocks the duplicate.
+  const busyRef = useRef(false);
 
   useEffect(() => {
     let alive = true;
@@ -68,9 +72,11 @@ export function ComposeForm() {
   }, [price, size]);
 
   async function broadcast() {
-    if (!sealed || busy) return;
+    if (!sealed || busyRef.current) return;
+    busyRef.current = true;
     const desk = loadDesk();
     if (!desk) {
+      busyRef.current = false;
       setSubmitErr("no desk identity — re-authenticate");
       return;
     }
@@ -99,8 +105,12 @@ export function ComposeForm() {
       });
       router.push(`/app/pool?order=${encodeURIComponent(id)}`);
     } catch (e) {
-      setSubmitErr(e instanceof Error ? e.message : String(e));
+      const msg = e instanceof Error ? e.message : String(e);
+      // A nullifier collision means this exact order was already accepted — guide
+      // the user to the pool instead of showing a scary "broadcast failed".
+      setSubmitErr(/nullifier/i.test(msg) ? "already broadcast — view it in the pool" : msg);
       setBusy(false);
+      busyRef.current = false;
     }
   }
 
@@ -224,6 +234,8 @@ export function ComposeForm() {
           {`// ${side} ${size} @ ${price} — price & size never leave this device.`}
           <br />
           {`// the network only ever sees this hash · TIF ${tif}.`}
+          <br />
+          {`// full-fill model — a counter must match this exact size to cross.`}
         </div>
         {submitErr ? (
           <div style={{ fontFamily: mono, fontSize: 11, color: "#E05A6E", lineHeight: 1.6, marginTop: 14 }}>
