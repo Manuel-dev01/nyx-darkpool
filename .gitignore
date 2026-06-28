@@ -78,3 +78,5 @@ logs/
 !/circuits/build/darkpool_match_js/
 /circuits/build/darkpool_match_js/*
 !/circuits/build/darkpool_match_js/darkpool_match.wasm
+
+.vercel
