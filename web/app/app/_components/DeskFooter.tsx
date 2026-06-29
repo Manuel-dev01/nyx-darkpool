@@ -31,7 +31,7 @@ export function DeskFooter() {
   }
 
   return (
-    <div style={{ padding: "18px 22px", borderTop: "1px solid #13171C" }}>
+    <div className="nyx-shell-footer" style={{ padding: "18px 22px", borderTop: "1px solid #13171C" }}>
       <div style={{ fontFamily: mono, fontSize: 10, color: "#565C64", letterSpacing: "0.08em" }}>
         {desk ? desk.label.toUpperCase() : "DESK"}
       </div>

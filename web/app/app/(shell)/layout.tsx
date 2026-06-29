@@ -16,6 +16,7 @@ const serif = "'Spectral', serif";
 export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div
+      className="nyx-shell"
       style={{
         height: "100vh",
         display: "flex",
@@ -26,8 +27,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         overflow: "hidden",
       }}
     >
-      {/* sidebar */}
+      {/* sidebar — collapses to a top bar on mobile (see .nyx-shell-* in globals.css) */}
       <div
+        className="nyx-shell-side"
         style={{
           width: 208,
           flex: "none",
@@ -39,6 +41,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       >
         <Link
           href="/app"
+          className="nyx-shell-logo"
           style={{
             padding: 22,
             borderBottom: "1px solid #13171C",
@@ -59,7 +62,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* content */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "auto" }}>
+      <div className="nyx-shell-main" style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "auto" }}>
         <AuthGate>{children}</AuthGate>
       </div>
     </div>

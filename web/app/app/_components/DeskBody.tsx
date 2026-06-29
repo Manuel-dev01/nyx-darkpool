@@ -63,7 +63,7 @@ export function DeskBody() {
       <Topbar title="Desk" right={<LiveDot label="LIVE" />} />
       <div style={{ flex: 1, padding: 28 }}>
         {/* stat row */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 1, background: "#13171C", border: "1px solid #13171C", marginBottom: 24 }}>
+        <div className="nyx-app-stats4" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 1, background: "#13171C", border: "1px solid #13171C", marginBottom: 24 }}>
           {stats.map((s) => (
             <div key={s.k} style={{ background: "#07080A", padding: "20px 22px" }}>
               <div style={{ fontFamily: mono, fontSize: 10, color: "#3D434B", letterSpacing: "0.1em", textTransform: "uppercase" }}>{s.k}</div>

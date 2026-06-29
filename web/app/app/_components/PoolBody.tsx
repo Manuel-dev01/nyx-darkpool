@@ -100,12 +100,12 @@ export function PoolBody() {
       <Topbar title="Pool" sub={active ? `/ order ${shortId(active.id, 4, 4)}` : undefined} right={<Searching found={found} />} />
       <div style={{ flex: 1, display: "flex", minHeight: 0, flexWrap: "wrap" }}>
         {/* lattice */}
-        <div style={{ flex: "1.4 1 420px", padding: 32, borderRight: "1px solid #13171C", display: "flex", flexDirection: "column", minWidth: 0 }}>
+        <div className="nyx-col-left" style={{ flex: "1.4 1 420px", padding: 32, borderRight: "1px solid #13171C", display: "flex", flexDirection: "column", minWidth: 0 }}>
           <div style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.14em", color: "#8A9099", marginBottom: 8 }}>SHIELDED POOL</div>
           <div style={{ fontFamily: mono, fontSize: 11, color: "#3D434B", marginBottom: 24 }}>
             {orders === null ? "connecting…" : `${open.length} resting commitments · prices & sizes hidden`}
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(16,1fr)", gridAutoRows: "1fr", gap: 11, alignContent: "start" }}>
+          <div className="nyx-pool-lattice" style={{ display: "grid", gridTemplateColumns: "repeat(16,1fr)", gridAutoRows: "1fr", gap: 11, alignContent: "start" }}>
             {Array.from({ length: CELLS }).map((_, i) => {
               const isMatch = found && i === Math.min(lit, CELLS - 1);
               return (

@@ -104,8 +104,9 @@ a { color: inherit; }
   .nyx-wrap   { padding: 76px 20px !important; }
   .nyx-footer { padding: 28px 20px !important; }
 
-  /* hero */
-  .nyx-hero         { padding: 92px 20px 84px !important; min-height: auto !important; }
+  /* hero — clip the floating orbit to the hero box so its arc stops bleeding
+     down across the manifesto heading below it */
+  .nyx-hero         { padding: 92px 20px 84px !important; min-height: auto !important; overflow: hidden !important; }
   .nyx-hero-eyebrow { margin-bottom: 26px !important; letter-spacing: 0.18em !important; }
   .nyx-hero-h1      { font-size: clamp(44px, 13vw, 68px) !important; }
   .nyx-hero-sub     { font-size: 18px !important; margin-top: 28px !important; }
@@ -133,4 +134,67 @@ a { color: inherit; }
 
   /* access CTA */
   .nyx-access { padding: 104px 20px !important; }
+}
+
+/* ============================================================================
+   Responsive — product shell (/app)
+   ----------------------------------------------------------------------------
+   The product frame (app/(shell)/layout.tsx) is a fixed 208px sidebar + content
+   flex row. On a phone that sidebar eats half the screen, so collapse it into a
+   top bar: logo + a compact desk strip on one row, the section nav as its own
+   horizontally-scrolling row, content below. Same inline-style + !important
+   approach as the landing.
+   ========================================================================== */
+@media (max-width: 760px) {
+  .nyx-shell      { flex-direction: column !important; }
+  .nyx-shell-main { overflow-x: hidden !important; }
+
+  .nyx-shell-side {
+    width: 100% !important;
+    flex: none !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    border-right: none !important;
+    border-bottom: 1px solid #13171C !important;
+  }
+  .nyx-shell-logo { flex: none !important; border-bottom: none !important; padding: 12px 16px !important; }
+
+  /* desk identity -> compact horizontal cluster, pushed to the right of the logo */
+  .nyx-shell-footer {
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 4px 14px !important;
+    border-top: none !important;
+    padding: 8px 16px !important;
+  }
+  .nyx-shell-footer > * { margin-top: 0 !important; }
+
+  /* section nav -> its own full-width row, scrolled horizontally */
+  .nyx-shell-nav {
+    order: 9 !important;            /* always the last row, under logo + strip */
+    flex: 1 1 100% !important;
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    padding: 0 8px !important;
+    border-top: 1px solid #13171C !important;
+  }
+  .nyx-shell-navlink {
+    flex: none !important;
+    display: inline-block !important;
+    border-left: none !important;   /* the active marker is the brighter text */
+    padding: 12px 13px !important;
+    white-space: nowrap !important;
+  }
+
+  /* content reflow: 4-up stat row -> 2-up; dense pool lattice -> fewer columns;
+     a column split's right divider becomes a bottom divider once stacked */
+  .nyx-app-stats4   { grid-template-columns: 1fr 1fr !important; }
+  .nyx-pool-lattice { grid-template-columns: repeat(10, 1fr) !important; gap: 8px !important; }
+  .nyx-col-left     { border-right: none !important; border-bottom: 1px solid #13171C !important; }
 }

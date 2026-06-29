@@ -117,7 +117,7 @@ export function ComposeForm() {
   return (
     <div style={{ flex: 1, display: "flex", minHeight: 0, flexWrap: "wrap" }}>
       {/* form */}
-      <div style={{ flex: "1.2 1 360px", padding: 28, borderRight: "1px solid #13171C", display: "flex", flexDirection: "column", gap: 22 }}>
+      <div className="nyx-col-left" style={{ flex: "1.2 1 360px", padding: 28, borderRight: "1px solid #13171C", display: "flex", flexDirection: "column", gap: 22 }}>
         <div>
           <div style={label}>Pair</div>
           <div style={{ ...field, padding: 0 }}>

@@ -17,13 +17,14 @@ const ITEMS: { label: string; href: string }[] = [
 export function SideNav() {
   const pathname = usePathname();
   return (
-    <div style={{ padding: "16px 0", flex: 1 }}>
+    <div className="nyx-shell-nav" style={{ padding: "16px 0", flex: 1 }}>
       {ITEMS.map((it) => {
         const active = it.href === "/app" ? pathname === "/app" : pathname.startsWith(it.href);
         return (
           <Link
             key={it.href}
             href={it.href}
+            className="nyx-shell-navlink"
             style={{
               display: "block",
               padding: "11px 22px",
