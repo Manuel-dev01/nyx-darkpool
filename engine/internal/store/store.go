@@ -285,19 +285,55 @@ func (s *Store) SetProof(ctx context.Context, matchID string, proof []byte) erro
 	return nil
 }
 
-// SetOnchain records the on-chain settlement outcome. tx is truncated to the
-// settlement_tx column width and stored as NULL when empty.
+// SetOnchain records a NON-terminal on-chain settlement outcome (pending/
+// submitted/failed). tx is truncated to the settlement_tx column width and stored
+// as NULL when empty. The `<> 'confirmed'` guard makes the terminal state
+// monotonic: a stale 'failed'/'submitted' write (e.g. from a second engine
+// process losing the settle race) can never downgrade an already-confirmed match.
+// The confirmed transition itself goes through MarkSettled.
 func (s *Store) SetOnchain(ctx context.Context, matchID, status, tx string) error {
 	if len(tx) > 64 {
 		tx = tx[:64]
 	}
 	_, err := s.db.Pool.Exec(ctx,
-		`UPDATE matches SET onchain_status=$1::onchain_status, settlement_tx=NULLIF($2,'') WHERE id=$3`,
+		`UPDATE matches SET onchain_status=$1::onchain_status, settlement_tx=NULLIF($2,'')
+		   WHERE id=$3 AND onchain_status <> 'confirmed'::onchain_status`,
 		status, tx, matchID)
 	if err != nil {
 		return fmt.Errorf("store: set onchain: %w", err)
 	}
 	return nil
+}
+
+// MarkSettled records a CONFIRMED on-chain settlement and transitions both
+// underlying orders to the terminal 'settled' state, atomically in one tx. The
+// confirmed write carries the same `<> 'confirmed'` guard so it's idempotent and
+// can't be downgraded; the orders update runs regardless so a re-confirm still
+// reconciles the order lifecycle. tx is truncated to the column width / NULL when empty.
+func (s *Store) MarkSettled(ctx context.Context, matchID, tx string) error {
+	if len(tx) > 64 {
+		tx = tx[:64]
+	}
+	t, err := s.db.Pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("store: mark settled: %w", err)
+	}
+	defer func() { _ = t.Rollback(ctx) }()
+
+	if _, err := t.Exec(ctx,
+		`UPDATE matches SET onchain_status='confirmed'::onchain_status, settlement_tx=NULLIF($1,'')
+		   WHERE id=$2 AND onchain_status <> 'confirmed'::onchain_status`,
+		tx, matchID); err != nil {
+		return fmt.Errorf("store: mark settled (match): %w", err)
+	}
+	if _, err := t.Exec(ctx,
+		`UPDATE orders SET status='settled'
+		   WHERE id IN (SELECT maker_order_id FROM matches WHERE id=$1
+		                UNION SELECT taker_order_id FROM matches WHERE id=$1)`,
+		matchID); err != nil {
+		return fmt.Errorf("store: mark settled (orders): %w", err)
+	}
+	return t.Commit(ctx)
 }
 
 // Match is a read view of a settlement record for the API.

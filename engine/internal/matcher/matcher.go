@@ -279,9 +279,20 @@ func (m *Matcher) settleOnchain(ctx context.Context, matchID string, res prove.R
 	// landed but we crashed/failed before recording it), don't re-submit — that
 	// would hit the contract's AlreadySettled anti-replay. Record confirmed.
 	if len(hexProof.Public) >= 2 {
-		if done, e := m.onchain.IsSettled(ctx, hexProof.Public[0], hexProof.Public[1]); e == nil && done {
+		done, e := m.onchain.IsSettled(ctx, hexProof.Public[0], hexProof.Public[1])
+		switch {
+		case e != nil:
+			// Couldn't read on-chain settlement state. Do NOT blindly re-submit:
+			// if a prior tx already landed, re-submitting hits AlreadySettled and
+			// we'd record a genuinely settled match as 'failed'. Bump the bounded
+			// counter and retry on the next tick, leaving the status unchanged (no
+			// misleading FAILED flash for a transient read blip).
+			n := m.bumpFailure(matchID)
+			m.logger.Log(ctx, failLevel(n), "on-chain is_settled check failed; deferring", "match_id", matchID, "attempt", n, "error", e)
+			return
+		case done:
 			m.failures.Delete(matchID)
-			if err := m.store.SetOnchain(ctx, matchID, "confirmed", ""); err != nil {
+			if err := m.store.MarkSettled(ctx, matchID, ""); err != nil {
 				m.logger.Error("record settlement", "match_id", matchID, "error", err)
 				return
 			}
@@ -297,7 +308,7 @@ func (m *Matcher) settleOnchain(ctx context.Context, matchID string, res prove.R
 		return
 	}
 	m.failures.Delete(matchID)
-	if err := m.store.SetOnchain(ctx, matchID, "confirmed", tx); err != nil {
+	if err := m.store.MarkSettled(ctx, matchID, tx); err != nil {
 		m.logger.Error("record settlement", "match_id", matchID, "error", err)
 		return
 	}

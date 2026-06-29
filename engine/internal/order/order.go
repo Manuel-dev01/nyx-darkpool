@@ -52,13 +52,28 @@ type Payload struct {
 }
 
 // Validate checks that price, volume, and salt are base-10 integers (the domain
-// the circuit and commitment require). Used at the API boundary and by Encode.
+// the circuit and commitment require). Price and volume must additionally lie in
+// (0, 2^64): the circuit instantiates DarkpoolMatch(64) and range-checks each
+// price/volume operand with Num2Bits(64), so a value at or above 2^64 (or <= 0)
+// yields a valid commitment but an UNSATISFIABLE witness — the order would store
+// and match but never prove, then be silently abandoned. Rejecting it here (the
+// API boundary + Encode) keeps a direct API caller from creating a stuck order.
+// Salt is unconstrained beyond base-10 (it is only hashed, never range-checked).
 func (p Payload) Validate() error {
-	if _, ok := new(big.Int).SetString(p.Price, 10); !ok {
+	max := new(big.Int).Lsh(big.NewInt(1), 64) // circuit operands are Num2Bits(64)
+	price, ok := new(big.Int).SetString(p.Price, 10)
+	if !ok {
 		return fmt.Errorf("order: price %q is not a base-10 integer", p.Price)
 	}
-	if _, ok := new(big.Int).SetString(p.Volume, 10); !ok {
+	if price.Sign() <= 0 || price.Cmp(max) >= 0 {
+		return fmt.Errorf("order: price %q out of provable range (0, 2^64)", p.Price)
+	}
+	volume, ok := new(big.Int).SetString(p.Volume, 10)
+	if !ok {
 		return fmt.Errorf("order: volume %q is not a base-10 integer", p.Volume)
+	}
+	if volume.Sign() <= 0 || volume.Cmp(max) >= 0 {
+		return fmt.Errorf("order: volume %q out of provable range (0, 2^64)", p.Volume)
 	}
 	if _, ok := new(big.Int).SetString(p.Salt, 10); !ok {
 		return fmt.Errorf("order: salt %q is not a base-10 integer", p.Salt)

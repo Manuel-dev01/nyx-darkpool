@@ -157,10 +157,12 @@ func (s *Server) handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusConflict, errBody("nullifier already used"))
 		return
 	case err != nil:
-		// order.Encode rejects non-integer price/volume/salt as a bad request;
-		// everything else is a server error.
-		s.logger.Warn("create order failed", "error", err)
-		writeJSON(w, http.StatusBadRequest, errBody(err.Error()))
+		// Input was already validated above (payload.Validate + required fields)
+		// and duplicates are split off as 409, so any remaining error is server-side
+		// (DB down, serialization fault, etc). Return 500 with a generic body — do
+		// NOT echo the raw pg/driver string to the client.
+		s.logger.Error("create order failed", "error", err)
+		writeJSON(w, http.StatusInternalServerError, errBody("failed to create order"))
 		return
 	}
 	writeJSON(w, http.StatusCreated, map[string]string{"id": id})
