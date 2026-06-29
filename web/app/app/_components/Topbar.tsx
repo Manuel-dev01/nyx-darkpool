@@ -25,12 +25,14 @@ export function Topbar({ title, sub, right }: { title: string; sub?: string; rig
   );
 }
 
-/** Live status pill used on the Desk header. */
-export function LiveDot({ label }: { label: string }) {
+/** Live status pill used on the Desk header. `ok=false` flips it to a red,
+ * faster-pulsing "disconnected" state so a stale feed doesn't masquerade as live. */
+export function LiveDot({ label, ok = true }: { label: string; ok?: boolean }) {
+  const color = ok ? "#43C08A" : "#E05A6E";
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-      <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#43C08A", animation: "nyxPulse 2s ease-in-out infinite" }} />
-      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#8A9099", letterSpacing: "0.1em" }}>{label}</span>
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: color, animation: `nyxPulse ${ok ? 2 : 1}s ease-in-out infinite` }} />
+      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: ok ? "#8A9099" : "#E05A6E", letterSpacing: "0.1em" }}>{label}</span>
     </div>
   );
 }

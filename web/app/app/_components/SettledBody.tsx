@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Topbar } from "./Topbar";
 import { listOrders, getMatch, type Match, type OrderSummary } from "../../_lib/engine";
-import { shortId, hhmm, activeOrderId, explorerTxUrl } from "../../_lib/ui";
+import { shortId, hhmm, activeOrderId, explorerTxUrl, statusColor } from "../../_lib/ui";
 import { loadDesk } from "../../_lib/desk";
 
 const mono = "'IBM Plex Mono', monospace";
@@ -29,7 +29,10 @@ function downloadReceipt(match: Match, order: OrderSummary | null) {
     onchain_status: match.onchain_status,
     settlement_tx: match.settlement_tx ?? null,
     explorer: match.settlement_tx ? explorerTxUrl(match.settlement_tx) : null,
-    note: "Price and size are sealed off-chain; the market saw only a verified proof.",
+    note:
+      match.onchain_status === "confirmed"
+        ? "Price and size are sealed off-chain; the market saw only a verified proof."
+        : `Settlement did not confirm on-chain (status: ${match.onchain_status}); price and size remained sealed.`,
   };
   const blob = new Blob([JSON.stringify(receipt, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -69,6 +72,7 @@ export function SettledBody() {
   }, []);
 
   const confirmed = match?.onchain_status === "confirmed";
+  const failed = match?.onchain_status === "failed";
 
   return (
     <>
@@ -88,7 +92,13 @@ export function SettledBody() {
             </svg>
             <div>
               <div style={{ fontFamily: serif, fontSize: 32, color: "#ECEEF0", lineHeight: 1 }}>
-                {confirmed ? <>Settled <span style={{ fontStyle: "italic", color: "#3BD7E0" }}>atomically.</span></> : <>Awaiting <span style={{ fontStyle: "italic", color: "#8A9099" }}>settlement.</span></>}
+                {confirmed ? (
+                  <>Settled <span style={{ fontStyle: "italic", color: "#3BD7E0" }}>atomically.</span></>
+                ) : failed ? (
+                  <>Settlement <span style={{ fontStyle: "italic", color: "#E05A6E" }}>failed.</span></>
+                ) : (
+                  <>Awaiting <span style={{ fontStyle: "italic", color: "#8A9099" }}>settlement.</span></>
+                )}
               </div>
               <div style={{ fontFamily: mono, fontSize: 11, color: "#565C64", marginTop: 8, letterSpacing: "0.08em" }}>
                 {match ? `${hhmm(match.created_at)} UTC · match ${shortId(match.id, 4, 4)}` : note}
@@ -98,7 +108,7 @@ export function SettledBody() {
           <div style={{ border: "1px solid #13171C" }}>
             {[
               ["PAIR", order?.asset_pair ?? "—", "#ECEEF0"],
-              ["STATUS", (match?.onchain_status ?? "pending").toUpperCase(), confirmed ? "#3BD7E0" : "#8A9099"],
+              ["STATUS", (match?.onchain_status ?? "pending").toUpperCase(), statusColor(match?.onchain_status ?? "pending")],
               ["MAKER", match ? `undisclosed · ${shortId(match.maker_order_id, 4, 4)}` : "—", "#3D434B"],
               ["COUNTERPARTY", match ? `undisclosed · ${shortId(match.taker_order_id, 4, 4)}` : "—", "#3D434B"],
             ].map(([k, v, c], i, arr) => (
@@ -117,8 +127,8 @@ export function SettledBody() {
         <div style={{ flex: "1 1 320px", display: "flex", flexDirection: "column", gap: 18, position: "relative", maxWidth: 380 }}>
           <div style={{ border: "1px solid #13171C", padding: 20 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 16 }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: confirmed ? "#3BD7E0" : "#565C64" }} />
-              <span style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.12em", color: confirmed ? "#3BD7E0" : "#565C64" }}>{confirmed ? "PROOF VERIFIED" : "PENDING"}</span>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: confirmed ? "#3BD7E0" : failed ? "#E05A6E" : "#565C64" }} />
+              <span style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.12em", color: confirmed ? "#3BD7E0" : failed ? "#E05A6E" : "#565C64" }}>{confirmed ? "PROOF VERIFIED" : failed ? "VERIFICATION FAILED" : "PENDING"}</span>
             </div>
             <div style={{ fontFamily: mono, fontSize: 10, color: "#565C64", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 9 }}>Settlement tx</div>
             <div style={{ fontFamily: mono, fontSize: 12, color: "#ECEEF0", wordBreak: "break-all", lineHeight: 1.6 }}>{match?.settlement_tx ? shortId(match.settlement_tx, 10, 8) : "—"}</div>

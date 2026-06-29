@@ -25,10 +25,11 @@ export function DeskBody() {
   const [orders, setOrders] = useState<OrderSummary[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   // This desk's identity — the Desk view is scoped to orders YOU placed (the
-  // global, anonymized book lives on the Pool screen). Read after mount so SSR
-  // and the client agree.
-  const [pubkey, setPubkey] = useState<string | null>(null);
-  useEffect(() => { setPubkey(loadDesk()?.publicKey ?? null); }, []);
+  // global, anonymized book lives on the Pool screen). Read synchronously from
+  // the client-only localStorage in a lazy initializer so the desk is scoped on
+  // the FIRST render — otherwise the orders fetch could resolve before the pubkey
+  // and briefly flash the empty "no orders" state for a desk that has orders.
+  const [pubkey] = useState<string | null>(() => loadDesk()?.publicKey ?? null);
 
   useEffect(() => {
     let alive = true;
@@ -44,7 +45,7 @@ export function DeskBody() {
 
   // Only this desk's own orders. If the desk key isn't loaded yet, show nothing
   // (rather than the whole market) so two desks never look identical.
-  const mine = orders === null ? null : pubkey ? orders.filter((o) => o.pubkey === pubkey) : [];
+  const mine = orders === null || pubkey === null ? null : orders.filter((o) => o.pubkey === pubkey);
 
   const open = mine?.filter((o) => o.status === "open").length ?? 0;
   const matched = mine?.filter((o) => o.status === "matched").length ?? 0;
@@ -60,8 +61,15 @@ export function DeskBody() {
 
   return (
     <>
-      <Topbar title="Desk" right={<LiveDot label="LIVE" />} />
+      <Topbar title="Desk" right={<LiveDot label={err ? "RECONNECTING…" : "LIVE"} ok={!err} />} />
       <div style={{ flex: 1, padding: 28 }}>
+        {/* Stale-feed banner: once orders have loaded, a later poll failure is
+            otherwise invisible (the table keeps showing the last-known book). */}
+        {err && mine !== null ? (
+          <div style={{ fontFamily: mono, fontSize: 11, color: "#E05A6E", background: "#160E10", border: "1px solid #2A1418", padding: "10px 14px", marginBottom: 18, letterSpacing: "0.03em" }}>
+            {`// engine unreachable — showing last-known book, retrying… (${err})`}
+          </div>
+        ) : null}
         {/* stat row */}
         <div className="nyx-app-stats4" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 1, background: "#13171C", border: "1px solid #13171C", marginBottom: 24 }}>
           {stats.map((s) => (

@@ -31,9 +31,19 @@ export function AccessForm() {
   }, []);
 
   function authenticate(desk: Desk) {
-    saveDesk(desk);
+    if (!saveDesk(desk)) {
+      // Storage blocked (Safari private mode, disabled site data, quota). Without
+      // this guard the push to /app would loop straight back through AuthGate.
+      setErr("Storage is blocked — enable cookies / site data for this site to sign in.");
+      return;
+    }
     router.push("/app");
   }
+
+  // One error line, shown in every mode (generate / continue / import).
+  const errLine = err ? (
+    <div style={{ fontFamily: mono, fontSize: 11, color: "#E05A6E", marginTop: 10, textAlign: "left" }}>{`// ${err}`}</div>
+  ) : null;
 
   function regenerate() {
     setGenerated(createDesk("Desk"));
@@ -66,6 +76,7 @@ export function AccessForm() {
         >
           Use a different key
         </button>
+        {errLine}
       </div>
     );
   }
@@ -103,6 +114,7 @@ export function AccessForm() {
           <button type="button" style={cta} onClick={() => generated && authenticate(generated)} disabled={!generated}>
             Authenticate with new key →
           </button>
+          {errLine}
           <button
             type="button"
             onClick={regenerate}
@@ -124,7 +136,7 @@ export function AccessForm() {
               style={{ ...val, background: "transparent", border: "none", outline: "none", color: "#ECEEF0" }}
             />
           </div>
-          {err ? <div style={{ fontFamily: mono, fontSize: 11, color: "#E05A6E", marginTop: 10, textAlign: "left" }}>{`// ${err}`}</div> : null}
+          {errLine}
           <button type="button" style={cta} onClick={authenticateImport} disabled={!secret.trim()}>
             Authenticate with signed key →
           </button>

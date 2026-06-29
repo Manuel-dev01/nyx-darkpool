@@ -60,7 +60,17 @@ export function PoolBody() {
     const desk = loadDesk();
     if (!meta || !desk) return;
     let cancelled = false;
-    const t = setTimeout(async () => {
+    let timer: ReturnType<typeof setTimeout>;
+
+    // Race fallback, fixed so a non-crossing resting order can't starve a solo
+    // order: if a REAL opposing order rests, defer a couple of grace windows so
+    // the matcher can cross the genuine pair (the two-desk flow). But the engine
+    // only crosses on a crossing price AND exactly-equal volume (full-fill model),
+    // so if my order is STILL open after the grace, the resting opposite cannot
+    // cross it — stop deferring and post the demo counter rather than wait forever.
+    let deferrals = 0;
+    const maxDeferrals = 2; // ~2.5s grace + up to 2×2.5s before forcing the counter
+    const tick = async () => {
       if (cancelled || filledRef.current) return;
       try {
         const all = await listOrders(100);
@@ -69,7 +79,11 @@ export function PoolBody() {
         const opposingRests = all.some(
           (o) => o.id !== meta.id && o.status === "open" && o.asset_pair === meta.pair && o.side !== meta.side,
         );
-        if (opposingRests) return; // let the matcher pair the real orders
+        if (opposingRests && deferrals < maxDeferrals) {
+          deferrals++; // give the matcher a chance to cross the real pair first
+          timer = setTimeout(tick, 2500);
+          return;
+        }
         filledRef.current = true;
         const counter = await sealInts(meta.priceInt, meta.volumeInt);
         await createOrder({
@@ -86,8 +100,9 @@ export function PoolBody() {
       } catch {
         filledRef.current = false; // transient failure — allow a later attempt
       }
-    }, 2500);
-    return () => { cancelled = true; clearTimeout(t); };
+    };
+    timer = setTimeout(tick, 2500);
+    return () => { cancelled = true; clearTimeout(timer); };
   }, []);
 
   const open = (orders ?? []).filter((o) => o.status === "open");
@@ -154,6 +169,13 @@ export function PoolBody() {
                 </div>
               )}
             </>
+          ) : orders === null && activeId ? (
+            // We HAVE an active order id (just composed) but the list hasn't loaded
+            // yet (or the engine is waking) — don't imply the order was never sent.
+            <div style={{ fontFamily: mono, fontSize: 12, color: "#565C64", lineHeight: 1.7 }}>
+              {`// loading your order…`}<br />
+              {`// (waking the engine can take a moment)`}
+            </div>
           ) : (
             <div style={{ fontFamily: mono, fontSize: 12, color: "#565C64", lineHeight: 1.7 }}>
               {`// no active order.`}<br />

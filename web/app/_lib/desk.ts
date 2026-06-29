@@ -24,18 +24,28 @@ export function loadDesk(): Desk | null {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return null;
     const d = JSON.parse(raw) as Desk;
-    if (d && d.publicKey && d.secret) return d;
-    return null;
+    if (!d || !d.publicKey || !d.secret) return null;
+    // Validate it's a real keypair, not just structurally present. A corrupted /
+    // hand-edited / partially-written value would otherwise pass AuthGate and then
+    // throw at sign time (Keypair.fromSecret) with a confusing broadcast error and
+    // no route back to re-authenticate. Reject it here so AuthGate redirects cleanly.
+    if (!StrKey.isValidEd25519SecretSeed(d.secret)) return null;
+    if (!StrKey.isValidEd25519PublicKey(d.publicKey)) return null;
+    return d;
   } catch {
     return null;
   }
 }
 
-export function saveDesk(d: Desk): void {
+/** Persist the desk. Returns false if the write failed (storage disabled / quota /
+ * private mode) so the caller can surface it instead of silently looping through
+ * AuthGate back to /app/access. */
+export function saveDesk(d: Desk): boolean {
   try {
     window.localStorage.setItem(KEY, JSON.stringify(d));
+    return true;
   } catch {
-    /* storage disabled — non-fatal */
+    return false; // storage disabled — caller must surface this
   }
 }
 

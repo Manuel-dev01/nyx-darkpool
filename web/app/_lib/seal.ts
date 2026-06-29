@@ -24,6 +24,13 @@ async function getPoseidon() {
 /** Number of decimal places a price is scaled by before integerization. */
 export const PRICE_SCALE = 2; // price ×100 → integer "cents"
 
+// The circuit instantiates DarkpoolMatch(64) and range-checks every price/volume
+// operand with Num2Bits(64) (circuits/darkpool_match.circom). A value at or above
+// 2^64 produces a valid Poseidon commitment but an UNSATISFIABLE witness — the
+// order would seal + broadcast, match, then never prove (silently abandoned).
+// So a scaled value must be strictly within (0, 2^64) to be provable.
+const FIELD_MAX = 1n << 64n;
+
 /** Parse a human price like "99.84" into a base-10 integer string scaled by
  * PRICE_SCALE (→ "9984"). Rejects more than PRICE_SCALE decimals. */
 export function priceToInt(human: string): string {
@@ -36,7 +43,10 @@ export function priceToInt(human: string): string {
     throw new Error(`price supports at most ${PRICE_SCALE} decimals`);
   }
   const scaled = whole + frac.padEnd(PRICE_SCALE, "0");
-  return BigInt(scaled).toString(); // normalize (strip leading zeros)
+  const v = BigInt(scaled);
+  if (v <= 0n) throw new Error("price must be greater than 0");
+  if (v >= FIELD_MAX) throw new Error("price is too large");
+  return v.toString(); // normalize (strip leading zeros)
 }
 
 /** Parse a human size like "5,000,000" into a base-10 integer string. */
@@ -45,7 +55,10 @@ export function sizeToInt(human: string): string {
   if (!/^\d+$/.test(s)) {
     throw new Error(`invalid size "${human}"`);
   }
-  return BigInt(s).toString();
+  const v = BigInt(s);
+  if (v <= 0n) throw new Error("size must be greater than 0");
+  if (v >= FIELD_MAX) throw new Error("size is too large");
+  return v.toString();
 }
 
 /** A fresh, field-safe random salt as a decimal string (64 bits of entropy). */
