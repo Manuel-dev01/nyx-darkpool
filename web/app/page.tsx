@@ -78,6 +78,7 @@ export default function Landing() {
         }}
       >
         <div
+          className="nyx-nav-inner"
           style={{
             maxWidth: 1280,
             margin: "0 auto",
@@ -92,9 +93,14 @@ export default function Landing() {
             <span style={{ fontFamily: serif, fontSize: 19, letterSpacing: "0.01em" }}>Nyx</span>
           </Link>
           <div style={{ display: "flex", alignItems: "center", gap: 38 }}>
-            <a href="#how" style={navLink}>Protocol</a>
-            <a href="#trust" style={navLink}>Proofs</a>
-            <a href={REPO} target="_blank" rel="noreferrer" style={navLink}>Docs</a>
+            {/* The three text anchors collapse on mobile (see .nyx-nav-anchors)
+                so the "Enter the pool" CTA never overflows; they remain reachable
+                in the footer and via the page's scroll sections. */}
+            <div className="nyx-nav-anchors" style={{ display: "flex", alignItems: "center", gap: 38 }}>
+              <a href="#how" style={navLink}>Protocol</a>
+              <a href="#trust" style={navLink}>Proofs</a>
+              <a href={REPO} target="_blank" rel="noreferrer" style={navLink}>Docs</a>
+            </div>
             <Link
               href="/app/access"
               style={{ fontFamily: serif, fontSize: 15, color: "#ECEEF0", borderBottom: "1px solid #3BD7E0", paddingBottom: 3, textDecoration: "none" }}
@@ -106,7 +112,7 @@ export default function Landing() {
       </div>
 
       {/* ===================== HERO ===================== */}
-      <section id="hero" style={{ ...sectionAnchor, position: "relative", maxWidth: 1280, margin: "0 auto", padding: "150px 48px 170px", minHeight: "88vh" }}>
+      <section id="hero" className="nyx-hero" style={{ ...sectionAnchor, position: "relative", maxWidth: 1280, margin: "0 auto", padding: "150px 48px 170px", minHeight: "88vh" }}>
         <svg
           width="820"
           height="820"
@@ -119,23 +125,23 @@ export default function Landing() {
         </svg>
 
         <div style={{ position: "relative", maxWidth: 880 }}>
-          <div style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.26em", color: "#3BD7E0", textTransform: "uppercase", marginBottom: 52 }}>
+          <div className="nyx-hero-eyebrow" style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.26em", color: "#3BD7E0", textTransform: "uppercase", marginBottom: 52 }}>
             Σ &nbsp; A dark pool for institutional RWA
           </div>
-          <h1 style={{ fontFamily: serif, fontWeight: 300, fontSize: "clamp(56px,8vw,104px)", lineHeight: 1.0, letterSpacing: "-0.018em", margin: 0, color: "#ECEEF0" }}>
+          <h1 className="nyx-hero-h1" style={{ fontFamily: serif, fontWeight: 300, fontSize: "clamp(56px,8vw,104px)", lineHeight: 1.0, letterSpacing: "-0.018em", margin: 0, color: "#ECEEF0" }}>
             The night that<br />even Zeus<br />would not <span style={{ fontStyle: "italic", color: "#3BD7E0" }}>cross.</span>
           </h1>
-          <p style={{ fontFamily: serif, fontWeight: 300, fontSize: 23, lineHeight: 1.55, color: "#9aa0a8", maxWidth: 540, margin: "48px 0 0" }}>
+          <p className="nyx-hero-sub" style={{ fontFamily: serif, fontWeight: 300, fontSize: 23, lineHeight: 1.55, color: "#9aa0a8", maxWidth: 540, margin: "48px 0 0" }}>
             Nyx settles institutional size in the dark. Price and volume are sealed as commitments; a zero-knowledge proof — not your
             counterparty, not the chain — attests the match.
           </p>
-          <div style={{ display: "flex", alignItems: "center", gap: 36, marginTop: 52, flexWrap: "wrap" }}>
+          <div className="nyx-hero-ctas" style={{ display: "flex", alignItems: "center", gap: 36, marginTop: 52, flexWrap: "wrap" }}>
             <Link href="/app/access" style={{ ...ctaFilled, padding: "14px 26px" }}>Request desk access</Link>
             <a href={REPO} target="_blank" rel="noreferrer" style={ctaQuiet}>Read the spec →</a>
           </div>
         </div>
 
-        <div style={{ position: "absolute", left: 48, bottom: 56, display: "flex", alignItems: "center", gap: 14 }}>
+        <div className="nyx-hero-scroll" style={{ position: "absolute", left: 48, bottom: 56, display: "flex", alignItems: "center", gap: 14 }}>
           <span style={{ fontFamily: mono, fontSize: 10, letterSpacing: "0.24em", color: "#3D434B", textTransform: "uppercase" }}>Scroll</span>
           <div style={{ width: 42, height: 1, background: "#23272E" }} />
         </div>
@@ -143,8 +149,8 @@ export default function Landing() {
 
       {/* ===================== MANIFESTO ===================== */}
       <section id="why" style={{ ...sectionAnchor, borderTop: "1px solid #13171C" }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "130px 48px", display: "flex", gap: 40 }}>
-          <div style={{ flex: "none", width: 120, paddingTop: 14 }}>
+        <div className="nyx-wrap nyx-row" style={{ maxWidth: 1280, margin: "0 auto", padding: "130px 48px", display: "flex", gap: 40 }}>
+          <div className="nyx-row-side" style={{ flex: "none", width: 120, paddingTop: 14 }}>
             <span style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.18em", color: "#3D434B" }}>01 / WHY</span>
           </div>
           <div style={{ flex: 1, maxWidth: 840 }}>
@@ -174,14 +180,14 @@ export default function Landing() {
             "repeating-linear-gradient(0deg,#0d1014 0,#0d1014 1px,transparent 1px,transparent 44px),repeating-linear-gradient(90deg,#0d1014 0,#0d1014 1px,transparent 1px,transparent 44px)",
         }}
       >
-        <div style={{ position: "absolute", top: 0, right: 0, borderLeft: "1px solid #15181D", borderBottom: "1px solid #15181D", padding: "14px 20px", textAlign: "right", background: "#07080A" }}>
+        <div className="nyx-fig" style={{ position: "absolute", top: 0, right: 0, borderLeft: "1px solid #15181D", borderBottom: "1px solid #15181D", padding: "14px 20px", textAlign: "right", background: "#07080A" }}>
           <div style={{ fontFamily: mono, fontSize: 10, letterSpacing: "0.14em", color: "#3BD7E0" }}>FIG. 01</div>
           <div style={{ fontFamily: mono, fontSize: 10, letterSpacing: "0.1em", color: "#565C64", marginTop: 3 }}>NYX SETTLEMENT PATH</div>
         </div>
 
-        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "130px 48px" }}>
-          <div style={{ display: "flex", gap: 40, marginBottom: 96 }}>
-            <div style={{ flex: "none", width: 120, paddingTop: 8 }}>
+        <div className="nyx-wrap" style={{ maxWidth: 1280, margin: "0 auto", padding: "130px 48px" }}>
+          <div className="nyx-row" style={{ display: "flex", gap: 40, marginBottom: 96 }}>
+            <div className="nyx-row-side" style={{ flex: "none", width: 120, paddingTop: 8 }}>
               <span style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.18em", color: "#3D434B" }}>02 / HOW</span>
             </div>
             <div style={{ flex: 1 }}>
@@ -196,12 +202,12 @@ export default function Landing() {
           </div>
 
           <div style={{ position: "relative", marginBottom: 90 }}>
-            <svg width="100%" height="4" viewBox="0 0 1152 4" preserveAspectRatio="none" style={{ position: "absolute", top: 38, left: 0 }} aria-hidden="true">
+            <svg className="nyx-steps-line" width="100%" height="4" viewBox="0 0 1152 4" preserveAspectRatio="none" style={{ position: "absolute", top: 38, left: 0 }} aria-hidden="true">
               <line x1="0" y1="2" x2="1152" y2="2" stroke="#23272E" strokeWidth="1" />
               <line x1="0" y1="2" x2="1152" y2="2" stroke="#3BD7E0" strokeWidth="1" strokeDasharray="10 10" style={{ animation: "nyxDash 2.5s linear infinite", opacity: 0.7 }} />
             </svg>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 0, position: "relative" }}>
+            <div className="nyx-steps" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 0, position: "relative" }}>
               {STEPS.map((s) => (
                 <div key={s.n} style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 18px" }}>
                   <div
@@ -247,16 +253,16 @@ export default function Landing() {
 
       {/* ===================== WHAT YOU TRADE ===================== */}
       <section id="what" style={{ ...sectionAnchor, borderTop: "1px solid #13171C" }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "130px 48px" }}>
-          <div style={{ display: "flex", gap: 40, marginBottom: 72 }}>
-            <div style={{ flex: "none", width: 120 }}>
+        <div className="nyx-wrap" style={{ maxWidth: 1280, margin: "0 auto", padding: "130px 48px" }}>
+          <div className="nyx-row" style={{ display: "flex", gap: 40, marginBottom: 72 }}>
+            <div className="nyx-row-side" style={{ flex: "none", width: 120 }}>
               <span style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.18em", color: "#3D434B" }}>03 / WHAT</span>
             </div>
             <h2 style={{ fontFamily: serif, fontWeight: 300, fontSize: "clamp(34px,4vw,52px)", lineHeight: 1.08, color: "#ECEEF0", margin: 0, maxWidth: 720 }}>
               Real-world assets, traded in the dark.
             </h2>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 80px", borderTop: "1px solid #13171C" }}>
+          <div className="nyx-assets" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 80px", borderTop: "1px solid #13171C" }}>
             {ASSETS.map((a) => (
               <div key={a.code} style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: "30px 0", borderBottom: "1px solid #13171C" }}>
                 <span style={{ fontFamily: serif, fontSize: 25, color: "#ECEEF0" }}>{a.name}</span>
@@ -269,8 +275,8 @@ export default function Landing() {
 
       {/* ===================== BUILT ON STELLAR ===================== */}
       <section id="stellar" style={{ ...sectionAnchor, borderTop: "1px solid #13171C", background: "#0A0C0F" }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "130px 48px", display: "flex", gap: 64, alignItems: "center", flexWrap: "wrap" }}>
-          <div style={{ flex: 1, minWidth: 420 }}>
+        <div className="nyx-wrap nyx-stellar" style={{ maxWidth: 1280, margin: "0 auto", padding: "130px 48px", display: "flex", gap: 64, alignItems: "center", flexWrap: "wrap" }}>
+          <div className="nyx-stellar-text" style={{ flex: 1, minWidth: 420 }}>
             <div style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.22em", color: "#3BD7E0", textTransform: "uppercase", marginBottom: 34 }}>Built on Stellar</div>
             <h2 style={{ fontFamily: serif, fontWeight: 300, fontSize: "clamp(34px,4vw,50px)", lineHeight: 1.12, color: "#ECEEF0", margin: 0, maxWidth: 560 }}>
               Proofs verified on-chain, natively.
@@ -280,7 +286,7 @@ export default function Landing() {
               zero-knowledge proof needs to be checked directly in a Soroban contract. No bridge, no off-chain verifier, no trust.
             </p>
           </div>
-          <div style={{ flex: "none", width: 340, display: "flex", flexDirection: "column", gap: 1, background: "#15181D", border: "1px solid #15181D" }}>
+          <div className="nyx-stellar-table" style={{ flex: "none", width: 340, display: "flex", flexDirection: "column", gap: 1, background: "#15181D", border: "1px solid #15181D" }}>
             {STELLAR_ROWS.map((r) => (
               <div key={r.k} style={{ background: "#07080A", padding: "22px 24px", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <span style={{ fontFamily: mono, fontSize: 11, color: "#565C64", letterSpacing: "0.1em" }}>{r.k}</span>
@@ -293,9 +299,9 @@ export default function Landing() {
 
       {/* ===================== PROOF STATS ===================== */}
       <section id="trust" style={{ ...sectionAnchor, borderTop: "1px solid #13171C" }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "120px 48px", display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 1, background: "#13171C", border: "1px solid #13171C" }}>
+        <div className="nyx-wrap nyx-stats" style={{ maxWidth: 1280, margin: "0 auto", padding: "120px 48px", display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 1, background: "#13171C", border: "1px solid #13171C" }}>
           {STATS.map((s) => (
-            <div key={s.label} style={{ background: "#07080A", padding: "54px 40px" }}>
+            <div key={s.label} className="nyx-stat-cell" style={{ background: "#07080A", padding: "54px 40px" }}>
               <div style={{ fontFamily: serif, fontWeight: 300, fontSize: 52, color: s.accent ? "#3BD7E0" : "#ECEEF0", lineHeight: 1 }}>{s.big}</div>
               <div style={{ fontFamily: mono, fontSize: 12, color: "#8A9099", marginTop: 16, letterSpacing: "0.08em" }}>{s.label}</div>
             </div>
@@ -309,7 +315,7 @@ export default function Landing() {
           <circle cx="50" cy="50" r="44" fill="none" stroke="#13171C" strokeWidth="0.6" />
           <circle cx="50" cy="50" r="44" fill="none" stroke="#3BD7E0" strokeWidth="0.6" strokeLinecap="round" strokeDasharray="150 277" transform="rotate(-72 50 50)" />
         </svg>
-        <div style={{ position: "relative", maxWidth: 1280, margin: "0 auto", padding: "170px 48px", textAlign: "center" }}>
+        <div className="nyx-access" style={{ position: "relative", maxWidth: 1280, margin: "0 auto", padding: "170px 48px", textAlign: "center" }}>
           <h2 style={{ fontFamily: serif, fontWeight: 300, fontSize: "clamp(46px,6vw,82px)", lineHeight: 1.02, letterSpacing: "-0.015em", color: "#ECEEF0", margin: 0 }}>
             Enter the <span style={{ fontStyle: "italic", color: "#3BD7E0" }}>pool.</span>
           </h2>
@@ -325,7 +331,7 @@ export default function Landing() {
 
       {/* ===================== FOOTER ===================== */}
       <div style={{ borderTop: "1px solid #13171C" }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto", padding: 48, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 18 }}>
+        <div className="nyx-footer" style={{ maxWidth: 1280, margin: "0 auto", padding: 48, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 18 }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none", color: "#8A9099" }}>
             <Eclipse size={18} />
             <span style={{ fontFamily: serif, fontSize: 16, color: "#8A9099" }}>Nyx Darkpool</span>

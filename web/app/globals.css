@@ -76,3 +76,61 @@ a { color: inherit; }
 
 /* indeterminate verify spinner (App · Pool / Prove) */
 @keyframes nyxSpin { to { transform: rotate(360deg); } }
+
+/* ============================================================================
+   Responsive — collapse the inline-styled landing for small screens
+   ----------------------------------------------------------------------------
+   The landing (app/page.tsx) keeps pixel-precise INLINE styles for desktop
+   fidelity, so media queries can't reach it directly. These class hooks are the
+   one place its mobile rules live; `!important` is required only because it must
+   override inline styles. Ordered widest-first so the narrowest block wins where
+   two match (e.g. the 4-step grid: 2-up on tablet, 1-up on phone).
+   ========================================================================== */
+
+/* Tablet: the four settlement-path steps cramp at 4-across — go 2-up. */
+@media (max-width: 1024px) {
+  .nyx-steps { grid-template-columns: 1fr 1fr !important; gap: 56px 24px !important; }
+}
+
+/* Phone: tighten the 48px gutters / tall vertical padding, stack the
+   "01 / WHY" sidebar rows, and collapse every multi-column grid to one. */
+@media (max-width: 760px) {
+  /* nav — shrink and drop the inline anchors (still reachable in the footer),
+     keeping the wordmark + the "Enter the pool" CTA so nothing overflows */
+  .nyx-nav-inner   { padding: 14px 20px !important; }
+  .nyx-nav-anchors { display: none !important; }
+
+  /* every section's inner wrapper */
+  .nyx-wrap   { padding: 76px 20px !important; }
+  .nyx-footer { padding: 28px 20px !important; }
+
+  /* hero */
+  .nyx-hero         { padding: 92px 20px 84px !important; min-height: auto !important; }
+  .nyx-hero-eyebrow { margin-bottom: 26px !important; letter-spacing: 0.18em !important; }
+  .nyx-hero-h1      { font-size: clamp(44px, 13vw, 68px) !important; }
+  .nyx-hero-sub     { font-size: 18px !important; margin-top: 28px !important; }
+  .nyx-hero-ctas    { gap: 18px !important; margin-top: 36px !important; }
+  .nyx-hero-scroll  { display: none !important; }
+
+  /* "01 / WHY" sidebar rows -> stack vertically */
+  .nyx-row      { flex-direction: column !important; gap: 16px !important; }
+  .nyx-row-side { width: auto !important; padding-top: 0 !important; }
+
+  /* schematic — single column, drop the horizontal connector + the FIG badge */
+  .nyx-steps      { grid-template-columns: 1fr !important; gap: 44px !important; }
+  .nyx-steps-line { display: none !important; }
+  .nyx-fig        { display: none !important; }
+
+  /* assets 2-up -> 1-up; stats 3-up -> 1-up */
+  .nyx-assets   { grid-template-columns: 1fr !important; }
+  .nyx-stats    { grid-template-columns: 1fr !important; }
+  .nyx-stat-cell{ padding: 36px 24px !important; }
+
+  /* stellar split -> let the copy + table each take the full width */
+  .nyx-stellar       { gap: 40px !important; }
+  .nyx-stellar-text  { min-width: 0 !important; }
+  .nyx-stellar-table { width: 100% !important; }
+
+  /* access CTA */
+  .nyx-access { padding: 104px 20px !important; }
+}
