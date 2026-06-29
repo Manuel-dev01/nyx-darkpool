@@ -96,7 +96,7 @@ export function ComposeForm() {
     const desk = loadDesk();
     if (!desk) {
       busyRef.current = false;
-      setSubmitErr("no desk identity — re-authenticate");
+      setSubmitErr("no desk identity, re-authenticate");
       return;
     }
     setBusy(true);
@@ -127,7 +127,7 @@ export function ComposeForm() {
       const msg = e instanceof Error ? e.message : String(e);
       // A nullifier collision means this exact order was already accepted — guide
       // the user to the pool instead of showing a scary "broadcast failed".
-      setSubmitErr(/nullifier/i.test(msg) ? "already broadcast — view it in the pool" : msg);
+      setSubmitErr(/nullifier/i.test(msg) ? "already broadcast, view it in the pool" : msg);
       setBusy(false);
       busyRef.current = false;
     }
@@ -252,11 +252,11 @@ export function ComposeForm() {
         <div style={{ fontFamily: mono, fontSize: 11, color: "#565C64", lineHeight: 1.7, marginBottom: "auto" }}>
           {`// ${side} · ${pair}`}
           <br />
-          {`// ${size} @ ${price} — price & size never leave this device.`}
+          {`// ${size} @ ${price} · price & size never leave this device.`}
           <br />
           {`// pair & side route in the clear; the hash seals price & size · TIF ${tif}.`}
           <br />
-          {`// full-fill model — a counter must match this exact size to cross.`}
+          {`// full-fill model · a counter must match this exact size to cross.`}
         </div>
         {submitErr ? (
           <div style={{ fontFamily: mono, fontSize: 11, color: "#E05A6E", lineHeight: 1.6, marginTop: 14 }}>

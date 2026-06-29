@@ -36,7 +36,7 @@ export function DeskFooter() {
         {desk ? desk.label.toUpperCase() : "DESK"}
       </div>
       <div style={{ fontFamily: mono, fontSize: 10, color: "#3D434B", marginTop: 5, wordBreak: "break-all" }}>
-        {desk ? shortId(desk.publicKey, 6, 6) : "—"}
+        {desk ? shortId(desk.publicKey, 6, 6) : "·"}
       </div>
 
       {/* Demo-Mode: auto-fill a crossing counterparty after compose. */}

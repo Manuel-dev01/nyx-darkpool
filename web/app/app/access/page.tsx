@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Eclipse } from "../../_components/Eclipse";
 import { AccessForm } from "../_components/AccessForm";
 
-export const metadata: Metadata = { title: "Nyx — Desk access" };
+export const metadata: Metadata = { title: "Nyx · Desk access" };
 
 const serif = "'Spectral', serif";
 const mono = "'IBM Plex Mono', monospace";

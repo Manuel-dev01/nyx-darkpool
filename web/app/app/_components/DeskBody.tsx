@@ -67,7 +67,7 @@ export function DeskBody() {
             otherwise invisible (the table keeps showing the last-known book). */}
         {err && mine !== null ? (
           <div style={{ fontFamily: mono, fontSize: 11, color: "#E05A6E", background: "#160E10", border: "1px solid #2A1418", padding: "10px 14px", marginBottom: 18, letterSpacing: "0.03em" }}>
-            {`// engine unreachable — showing last-known book, retrying… (${err})`}
+            {`// engine unreachable · showing last-known book, retrying… (${err})`}
           </div>
         ) : null}
         {/* stat row */}
@@ -93,7 +93,7 @@ export function DeskBody() {
             {mine === null ? (
               <div style={{ padding: "18px 20px", fontFamily: mono, fontSize: 11, color: "#565C64" }}>{err ? `// engine unreachable: ${err}` : "// loading…"}</div>
             ) : mine.length === 0 ? (
-              <div style={{ padding: "18px 20px", fontFamily: mono, fontSize: 11, color: "#565C64" }}>{`// no orders from this desk yet — compose one to begin.`}</div>
+              <div style={{ padding: "18px 20px", fontFamily: mono, fontSize: 11, color: "#565C64" }}>{`// no orders from this desk yet · compose one to begin.`}</div>
             ) : (
               mine.map((o, i) => (
                 <div key={o.id} style={{ ...orderGrid, borderBottom: i < mine.length - 1 ? "1px solid #0E1115" : "none", background: i % 2 === 1 ? "#0A0C0F" : "transparent" }}>

@@ -107,10 +107,10 @@ export function SettledBody() {
           </div>
           <div style={{ border: "1px solid #13171C" }}>
             {[
-              ["PAIR", order?.asset_pair ?? "—", "#ECEEF0"],
+              ["PAIR", order?.asset_pair ?? "·", "#ECEEF0"],
               ["STATUS", (match?.onchain_status ?? "pending").toUpperCase(), statusColor(match?.onchain_status ?? "pending")],
-              ["MAKER", match ? `undisclosed · ${shortId(match.maker_order_id, 4, 4)}` : "—", "#3D434B"],
-              ["COUNTERPARTY", match ? `undisclosed · ${shortId(match.taker_order_id, 4, 4)}` : "—", "#3D434B"],
+              ["MAKER", match ? `undisclosed · ${shortId(match.maker_order_id, 4, 4)}` : "·", "#3D434B"],
+              ["COUNTERPARTY", match ? `undisclosed · ${shortId(match.taker_order_id, 4, 4)}` : "·", "#3D434B"],
             ].map(([k, v, c], i, arr) => (
               <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "18px 22px", borderBottom: i < arr.length - 1 ? "1px solid #13171C" : "none" }}>
                 <span style={{ fontFamily: mono, fontSize: 11, color: "#565C64", letterSpacing: "0.08em" }}>{k}</span>
@@ -131,7 +131,7 @@ export function SettledBody() {
               <span style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.12em", color: confirmed ? "#3BD7E0" : failed ? "#E05A6E" : "#565C64" }}>{confirmed ? "PROOF VERIFIED" : failed ? "VERIFICATION FAILED" : "PENDING"}</span>
             </div>
             <div style={{ fontFamily: mono, fontSize: 10, color: "#565C64", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 9 }}>Settlement tx</div>
-            <div style={{ fontFamily: mono, fontSize: 12, color: "#ECEEF0", wordBreak: "break-all", lineHeight: 1.6 }}>{match?.settlement_tx ? shortId(match.settlement_tx, 10, 8) : "—"}</div>
+            <div style={{ fontFamily: mono, fontSize: 12, color: "#ECEEF0", wordBreak: "break-all", lineHeight: 1.6 }}>{match?.settlement_tx ? shortId(match.settlement_tx, 10, 8) : "·"}</div>
             {match?.settlement_tx ? (
               <a
                 href={explorerTxUrl(match.settlement_tx)}

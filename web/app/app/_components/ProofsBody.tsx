@@ -128,7 +128,7 @@ export function ProofsBody() {
             {[
               ["System", "Groth16 · BN254", "#ECEEF0"],
               ["Public inputs", "2 commitments", "#ECEEF0"],
-              ["Proof", match?.has_proof ? "stored ✓" : "—", match?.has_proof ? "#3BD7E0" : "#565C64"],
+              ["Proof", match?.has_proof ? "stored ✓" : "·", match?.has_proof ? "#3BD7E0" : "#565C64"],
             ].map(([k, v, c]) => (
               <div key={k} style={{ display: "flex", justifyContent: "space-between", marginBottom: 13 }}>
                 <span style={{ fontFamily: mono, fontSize: 11, color: "#565C64" }}>{k}</span>
@@ -139,8 +139,8 @@ export function ProofsBody() {
           <div style={{ border: "1px solid #13171C", padding: 20, flex: 1 }}>
             <div style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.12em", color: "#8A9099", marginBottom: 16 }}>ON-CHAIN</div>
             {[
-              ["Status", match?.onchain_status ?? "—"],
-              ["Settlement tx", match?.settlement_tx ? shortId(match.settlement_tx, 6, 6) : "—"],
+              ["Status", match?.onchain_status ?? "·"],
+              ["Settlement tx", match?.settlement_tx ? shortId(match.settlement_tx, 6, 6) : "·"],
               ["Host fn", "bn254_pairing"],
             ].map(([k, v]) => (
               <div key={k} style={{ display: "flex", justifyContent: "space-between", marginBottom: 13 }}>
@@ -154,7 +154,7 @@ export function ProofsBody() {
               </Link>
             ) : (
               <div style={{ marginTop: 20, fontFamily: mono, fontSize: 11, color: "#565C64", lineHeight: 1.7 }}>
-                {`// neither desk learns the other's`}<br />{`// price or size — only that it cleared.`}
+                {`// neither desk learns the other's`}<br />{`// price or size · only that it cleared.`}
               </div>
             )}
           </div>

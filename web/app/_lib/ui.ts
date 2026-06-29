@@ -3,7 +3,7 @@ import { PRICE_SCALE } from "./seal";
 
 /** Shorten a long hex/decimal string for display: "1234…cdef". */
 export function shortId(s: string, head = 6, tail = 4): string {
-  if (!s) return "—";
+  if (!s) return "·";
   if (s.length <= head + tail + 1) return s;
   return `${s.slice(0, head)}…${s.slice(-tail)}`;
 }

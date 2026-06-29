@@ -34,7 +34,7 @@ export function AccessForm() {
     if (!saveDesk(desk)) {
       // Storage blocked (Safari private mode, disabled site data, quota). Without
       // this guard the push to /app would loop straight back through AuthGate.
-      setErr("Storage is blocked — enable cookies / site data for this site to sign in.");
+      setErr("Storage is blocked. Enable cookies / site data for this site to sign in.");
       return;
     }
     router.push("/app");
@@ -108,7 +108,7 @@ export function AccessForm() {
             <span style={val}>{generated ? shortId(generated.secret, 6, 4) : "…"}</span>
           </div>
           <div style={{ fontFamily: mono, fontSize: 10, color: "#565C64", lineHeight: 1.6, marginTop: 10, textAlign: "left" }}>
-            {`// a throwaway Stellar keypair — your desk identity.`}<br />
+            {`// a throwaway Stellar keypair · your desk identity.`}<br />
             {`// it signs every order; the engine verifies it on-chain-grade.`}
           </div>
           <button type="button" style={cta} onClick={() => generated && authenticate(generated)} disabled={!generated}>
