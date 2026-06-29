@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { seal, type Sealed } from "../../_lib/seal";
 import { createOrder } from "../../_lib/engine";
 import { loadDesk, signCommitment } from "../../_lib/desk";
-import { setActiveOrder } from "../../_lib/ui";
+import { setActiveOrder, loadComposeDraft, saveComposeDraft } from "../../_lib/ui";
 
 const mono = "'IBM Plex Mono', monospace";
 const sans = "'Archivo', sans-serif";
@@ -50,6 +50,25 @@ export function ComposeForm() {
   // could fire two broadcasts (the 2nd reusing the same commitment → a 409). A
   // ref flips synchronously and blocks the duplicate.
   const busyRef = useRef(false);
+
+  // Restore a saved draft after mount so navigating away (e.g. to the Pool) and
+  // back keeps the pair/side/price you picked. Done in an effect (not a lazy
+  // useState initializer) so server and first client render agree — localStorage
+  // is unreadable during SSR, and a lazy initializer would hydrate-mismatch.
+  useEffect(() => {
+    const d = loadComposeDraft();
+    if (!d) return;
+    if ((PAIRS as readonly string[]).includes(d.pair)) setPair(d.pair);
+    if (d.side === "BID" || d.side === "ASK") setSide(d.side);
+    if (d.tif === "GTC" || d.tif === "IOC" || d.tif === "1H") setTif(d.tif);
+    if (typeof d.price === "string") setPrice(d.price);
+    if (typeof d.size === "string") setSize(d.size);
+  }, []);
+
+  // Persist the draft on every change so it survives navigation + reloads.
+  useEffect(() => {
+    saveComposeDraft({ pair, side, tif, price, size });
+  }, [pair, side, tif, price, size]);
 
   useEffect(() => {
     let alive = true;
@@ -231,9 +250,11 @@ export function ComposeForm() {
           </div>
         </div>
         <div style={{ fontFamily: mono, fontSize: 11, color: "#565C64", lineHeight: 1.7, marginBottom: "auto" }}>
-          {`// ${side} ${size} @ ${price} — price & size never leave this device.`}
+          {`// ${side} · ${pair}`}
           <br />
-          {`// the network only ever sees this hash · TIF ${tif}.`}
+          {`// ${size} @ ${price} — price & size never leave this device.`}
+          <br />
+          {`// pair & side route in the clear; the hash seals price & size · TIF ${tif}.`}
           <br />
           {`// full-fill model — a counter must match this exact size to cross.`}
         </div>

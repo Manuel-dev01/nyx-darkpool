@@ -64,9 +64,14 @@ This is the **tester's** sweep — distinct from [`demo-script.md`](demo-script.
 ## 4. Compose (`/app/compose`)
 
 - [ ] **Pair** `<select>` lists 4 pairs: `US-TBILL-26`, `US-TBILL-27`, `EU-BUND-30`, `GOLD-RWA` (all
-      `/USDC`). Changing it recomputes the seal preview.
-- [ ] **BID/ASK** toggle flips colour; **TIF** (GTC/IOC/1H) toggles visually (*visual only — not yet
-      enforced by the engine*; flag only if it errors).
+      `/USDC`). Changing it updates the **seal-preview summary** (the `// SIDE · PAIR` line). The
+      Poseidon **commitment itself does not change** — it seals price+size+salt only; pair & side are
+      plaintext order-routing fields (so the hash moves only when you edit **price** or **size**).
+- [ ] **BID/ASK** toggle flips colour and updates the preview summary; **TIF** (GTC/IOC/1H) toggles
+      visually (*visual only — not yet enforced by the engine*; flag only if it errors).
+- [ ] **Draft persists:** pick a non-default pair/side, navigate to **Pool** and back to **Compose** —
+      your selection is **retained** (saved to `localStorage` → `nyx.composeDraft`), not reset to the
+      `US-TBILL-26 / BID` defaults.
 - [ ] **Seal preview** shows a live Poseidon **commitment** that changes as you edit price/size.
 - [ ] **Validation rejects** (preview shows a red error, broadcast disabled):
   - [ ] price `99.123` → “price supports at most 2 decimals”.
@@ -157,6 +162,7 @@ curl -s -X POST https://nyx-engine.onrender.com/orders -H 'Content-Type: applica
 | Demo-Mode ON auto-fills a counterparty | demo convenience; turn OFF for a true two-desk cross |
 | Two tabs of the **same** browser show the **same** desk | `localStorage` is shared per profile — use separate profiles/Incognito for two desks (§8) |
 | Unequal-size orders on the same pair never cross | **full-fill model** — sizes must match exactly (noted in Compose) |
+| Switching **pair** or **side** doesn't change the Poseidon commitment | the commitment seals `price+size+salt` only; pair & side are plaintext routing fields. The preview *summary* line updates; the hash changes only on price/size edits |
 | TIF buttons (GTC/IOC/1H) don't change matching | visual only; not yet enforced |
 | `/app/positions` is a placeholder | "Coming soon" by design |
 | Desk secret lives in `localStorage` | documented demo seam (prod = Freighter) — see [`key-custody.md`](key-custody.md) |

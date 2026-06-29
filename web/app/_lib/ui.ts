@@ -110,6 +110,43 @@ export function setDemoMode(on: boolean): void {
   }
 }
 
+/** The Compose form's in-progress draft. Persisted so navigating away (e.g. to
+ * the Pool to watch a match) and back doesn't reset the pair/side/price you
+ * picked. Note: pair & side are plaintext order routing fields and are NOT part
+ * of the Poseidon commitment (which seals price+size+salt) — so they round-trip
+ * here purely for UX, not crypto. */
+export interface ComposeDraft {
+  pair: string;
+  side: string; // "BID" | "ASK"
+  tif: string; // "GTC" | "IOC" | "1H"
+  price: string;
+  size: string;
+}
+
+const DRAFT_KEY = "nyx.composeDraft";
+
+/** Persist the Compose draft. Browser only. */
+export function saveComposeDraft(d: ComposeDraft): void {
+  try {
+    window.localStorage.setItem(DRAFT_KEY, JSON.stringify(d));
+  } catch {
+    /* storage disabled — non-fatal */
+  }
+}
+
+/** Read the saved Compose draft, or null if absent/invalid. */
+export function loadComposeDraft(): ComposeDraft | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw) as ComposeDraft;
+    return d && typeof d.pair === "string" ? d : null;
+  } catch {
+    return null;
+  }
+}
+
 /** stellar.expert testnet explorer links. */
 export function explorerTxUrl(tx: string): string {
   return `https://stellar.expert/explorer/testnet/tx/${tx}`;
