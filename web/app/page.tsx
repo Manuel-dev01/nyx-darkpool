@@ -4,11 +4,11 @@ import Link from "next/link";
 import { Eclipse } from "./_components/Eclipse";
 
 export const metadata: Metadata = {
-  title: "Nyx Darkpool — Trade in the dark",
+  title: "Nyx Darkpool · Trade in the dark",
 };
 
 /*
-  The Nyx marketing landing — real, interactive TSX (was embedded markup).
+  The Nyx marketing landing: real, interactive TSX (was embedded markup).
   Design preserved from design-src/Nyx Landing.dc.html, including the deliberate
   swap of the "Four steps. Nothing revealed." section for the SCHEMATIC
   settlement-path node graph (Direction C from Nyx Directions). All nav items
@@ -132,8 +132,8 @@ export default function Landing() {
             The night that<br />even Zeus<br />would not <span style={{ fontStyle: "italic", color: "#3BD7E0" }}>cross.</span>
           </h1>
           <p className="nyx-hero-sub" style={{ fontFamily: serif, fontWeight: 300, fontSize: 23, lineHeight: 1.55, color: "#9aa0a8", maxWidth: 540, margin: "48px 0 0" }}>
-            Nyx settles institutional size in the dark. Price and volume are sealed as commitments; a zero-knowledge proof — not your
-            counterparty, not the chain — attests the match.
+            Nyx settles institutional size in the dark. Price and volume are sealed as commitments; a zero-knowledge proof (not your
+            counterparty, not the chain) attests the match.
           </p>
           <div className="nyx-hero-ctas" style={{ display: "flex", alignItems: "center", gap: 36, marginTop: 52, flexWrap: "wrap" }}>
             <Link href="/app/access" style={{ ...ctaFilled, padding: "14px 26px" }}>Request desk access</Link>
@@ -156,7 +156,7 @@ export default function Landing() {
           <div style={{ flex: 1, maxWidth: 840 }}>
             <p style={{ fontFamily: serif, fontWeight: 300, fontSize: "clamp(30px,3.6vw,46px)", lineHeight: 1.34, letterSpacing: "-0.005em", color: "#ECEEF0", margin: 0 }}>
               When a large order touches a public mempool, the market sees you coming. Price moves before you fill.{" "}
-              <span style={{ color: "#3BD7E0" }}>Nyx removes the tell.</span> Orders never reveal price or volume — only a commitment,
+              <span style={{ color: "#3BD7E0" }}>Nyx removes the tell.</span> Orders never reveal price or volume: only a commitment,
               and a proof that the match was honest.
             </p>
             <div style={{ marginTop: 72, paddingLeft: 40, borderLeft: "1px solid #23272E", maxWidth: 560 }}>
@@ -282,7 +282,7 @@ export default function Landing() {
               Proofs verified on-chain, natively.
             </h2>
             <p style={{ fontSize: 17, lineHeight: 1.65, color: "#8A9099", maxWidth: 520, margin: "30px 0 0" }}>
-              Nyx settles on Stellar because Protocol 26 ships BN254 pairing as native host functions — the elliptic-curve operations a
+              Nyx settles on Stellar because Protocol 26 ships BN254 pairing as native host functions: the elliptic-curve operations a
               zero-knowledge proof needs to be checked directly in a Soroban contract. No bridge, no off-chain verifier, no trust.
             </p>
           </div>
@@ -380,5 +380,5 @@ const STELLAR_ROWS = [
 const STATS = [
   { big: "0 bytes", label: "of price or volume disclosed", accent: true },
   { big: "No operator", label: "to trust between counterparties", accent: false },
-  { big: "Atomic", label: "settlement — all of it, or none", accent: false },
+  { big: "Atomic", label: "settlement: all of it, or none", accent: false },
 ];
