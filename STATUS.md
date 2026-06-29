@@ -200,6 +200,52 @@ double-counter (guarded).
 
 Offline regression: `go vet ./... && go test ./...` and `npm run build` green.
 
+### Full-app audit + fixes (round 2) — 2026-06-29
+A deeper pass driven by a multi-agent **Workflow** (8 dimensions reviewed, every finding
+**double-verified** by two independent skeptics — 10 confirmed + 3 borderline, false positives
+dropped) **plus a live browser drive** (system Chrome → local web wired to the live engine: a full
+access→compose→pool→proofs→on-chain-confirmed→receipt run passed). All confirmed + borderline issues
+fixed. Compose-draft persistence (pair/side survive navigation) shipped just prior (commit `ef4f11a`).
+
+**Web (deployed via push → Vercel):**
+- **Pool demo-mode starvation (P1).** The auto-counter was suppressed by *any* opposite-side resting
+  order on the pair — even a non-crossing one the engine never matches (full-fill model) — so a solo
+  order rested in SEARCHING forever. Now defers a couple of grace windows (let the matcher cross a real
+  opposite) then posts the counter if the order is still open. _Verified live: victim matches despite a
+  planted non-crossing opposite._
+- **Settled "failed" state (P1).** On-chain `failed` rendered as "Awaiting settlement" (grey) with a
+  receipt still claiming a "verified proof". Added a real failed state (red header/status/indicator via
+  `statusColor`) + a status-aware receipt note.
+- **Order value bounds (P2/P3).** `seal.ts` now rejects price/size `<= 0` or `>= 2^64` (the circuit is
+  `DarkpoolMatch(64)`) — out-of-range values used to seal + broadcast but could never prove (silent
+  stuck order). Surfaced as a seal error (button disabled).
+- **Desk stale feed (P2/P3).** Engine-unreachable is now surfaced even after data loaded (stale-feed
+  banner + red `RECONNECTING` `LiveDot`) instead of a frozen book under a green LIVE; desk pubkey read
+  synchronously to kill the empty-state flash.
+- **Pool first-load (P2):** "loading your order" (not "no active order") when the first list fetch fails
+  but an active order id is set. **Access/desk (P2/P3):** `saveDesk` reports write failure → storage-
+  blocked sign-in shows an error instead of looping AuthGate; `loadDesk` validates the stored keypair.
+- **favicon:** added `web/app/icon.svg` (the eclipse mark) — `/favicon.ico` no longer 404s.
+
+**Engine (need a push → Render auto-deploy):**
+- **Order lifecycle (P2).** A confirmed settlement never moved its two orders to `status=settled` (stuck
+  `matched` forever). New `store.MarkSettled(matchID,tx)` confirms the match **and** settles both orders
+  in one tx; the matcher calls it on the success + idempotent-recheck paths.
+- **Monotonic terminal state (borderline P2).** `SetOnchain` was a blind UPDATE — a stale
+  `failed`/`submitted` write (2nd engine process) could downgrade a `confirmed` match and re-dispatch it
+  forever. Added an `AND onchain_status <> 'confirmed'` guard to `SetOnchain` + the `MarkSettled` write.
+- **Transient is_settled (borderline P1).** An `is_settled` read error fell through to a blind re-submit
+  (→ AlreadySettled → a settled match recorded `failed`). Now treated as transient: bump the bounded
+  counter, retry next tick, status unchanged.
+- **Insert error code (P2).** `POST /orders` returned `400` + the raw pg error for server/DB failures
+  (input already validated; duplicates are 409). Now `500` + generic body, raw error logged server-side.
+- **Engine value bounds (P2).** Mirrored the 64-bit bound in `order.Payload.Validate` so a direct API
+  caller can't create an unprovable order. `go vet` + `go test ./...` green.
+
+Also corrected: the original audit-plan checklist line implying the Poseidon commitment recomputes on a
+pair/side change — it does **not** (it seals price+size+salt only; pair & side are plaintext routing
+fields). `docs/test-checklist.md` updated with the draft-persistence check + a gotcha row.
+
 ### Cloud deploy — Vercel web + Render engine/PG (self-contained on-chain) — 2026-06-26
 Makes the stack deployable to the cloud with **on-chain settlement working and zero host dependency**
 (a judge opens a URL — no `make demo` on our laptop). Decisions: on-chain key = **auto-generate +
