@@ -84,7 +84,10 @@ func Load() (*Config, error) {
 		CircuitsRoot:        getenv("NYX_CIRCUITS_ROOT", "../circuits"),
 		ScriptsRoot:         getenv("NYX_SCRIPTS_ROOT", "../scripts"),
 		NodeBin:             getenv("NYX_NODE_BIN", "node"),
-		BlobKey:             os.Getenv("NYX_BLOB_KEY"),
+		// Trim surrounding whitespace/newlines: dashboard env editors (Render,
+		// etc.) commonly append a trailing newline when you paste the hex key,
+		// which would otherwise fail hex decoding with "invalid byte: U+000A".
+		BlobKey:             strings.TrimSpace(os.Getenv("NYX_BLOB_KEY")),
 		RequireOrderSig:     boolenv("NYX_REQUIRE_ORDER_SIG"),
 	}
 

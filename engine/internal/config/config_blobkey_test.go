@@ -38,6 +38,35 @@ func TestBlobKey_ValidHex(t *testing.T) {
 	}
 }
 
+// TestBlobKey_TrimsWhitespace guards the common dashboard paste mistake: a
+// trailing newline (U+000A) or surrounding spaces on the hex value. Load must
+// trim it rather than fail hex decoding.
+func TestBlobKey_TrimsWhitespace(t *testing.T) {
+	cases := []struct{ name, val string }{
+		{"trailing newline", validHexKey + "\n"},
+		{"leading+trailing spaces", "  " + validHexKey + "  "},
+		{"crlf", validHexKey + "\r\n"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			clearEnv(t)
+			clearMatcherEnv(t)
+			t.Setenv("NYX_BLOB_KEY", tc.val)
+
+			cfg, err := Load()
+			if err != nil {
+				t.Fatalf("Load with padded NYX_BLOB_KEY should succeed after trim: %v", err)
+			}
+			if cfg.BlobKey != validHexKey {
+				t.Errorf("BlobKey = %q, want trimmed %q", cfg.BlobKey, validHexKey)
+			}
+			if got := cfg.BlobKeyBytes(); len(got) != 32 {
+				t.Fatalf("BlobKeyBytes() len = %d, want 32", len(got))
+			}
+		})
+	}
+}
+
 func TestBlobKey_Invalid(t *testing.T) {
 	cases := []struct{ name, val string }{
 		{"not hex", "zzzz"},
