@@ -86,6 +86,6 @@ is a frontend-only change behind the `desk.ts` signing interface.
 
 - **At-rest order privacy** is separate and already addressed: the order's `price/volume/salt` are
   AES-256-GCM-encrypted in `orders.encrypted_blob` (engine `internal/secret`), with an ephemeral key
-  by default. See the project [`../README.md`](../README.md) and [`../STATUS.md`](../STATUS.md).
+  by default. See the project [`../README.md`](../README.md).
 - The desk key here authenticates *order intent*; **fund custody / confidential token transfer** is a
   further, deferred extension (the contract exposes a `settle_transfer` SAC seam).

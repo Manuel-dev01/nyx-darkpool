@@ -7,7 +7,10 @@ This deploys the **whole stack to the cloud with on-chain settlement working** �
 > **Live deployment (2026-06-26):** web **<https://nyx-darkpool.vercel.app>** (Vercel, GitHub-linked) →
 > engine **<https://nyx-engine.onrender.com>** (Render Blueprint, service `srv-d8v8f0po3t8c73f7c86g`) +
 > a Render-managed Postgres. Verified end-to-end through the public URL — a signed order settled on
-> Stellar testnet (see [`../STATUS.md`](../STATUS.md) for the tx). The engine host is **Render**;
+> Stellar testnet, browsable on stellar.expert (verifier contract
+> [`CBAFC6W5…GJRV`](https://stellar.expert/explorer/testnet/contract/CBAFC6W5IWQC5AB6LFMFI4KB4DZT23BU2O2AJ2H3B2727DO37DOJGJRV),
+> example settlement [tx `0706f517…a9dc9`](https://stellar.expert/explorer/testnet/tx/0706f517bac065f62151dfb6699e6b0da8da7ee85544f930aad277500e0a9dc9)).
+> The engine host is **Render**;
 > Railway was the original plan but its free plan blocked new-project provisioning (kept below as an
 > alternative — the image is host-agnostic).
 
@@ -118,7 +121,7 @@ Postgres + the engine Docker service, fully wired).
   auto-deploys.
 
 Open the Vercel URL → `/app/access` → generate a desk → compose & broadcast → watch Proofs animate
-to **Settled atomically** with a real stellar.expert tx. (See [`demo-script.md`](demo-script.md).)
+to **Settled atomically** with a real stellar.expert tx.
 
 ---
 

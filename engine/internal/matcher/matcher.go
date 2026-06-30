@@ -1,7 +1,6 @@
-// Package matcher contains the off-chain order-matching engine (Phase 5).
+// Package matcher contains the off-chain order-matching engine.
 //
-// Architecture (CLAUDE.md §2.2: "worker pools with Go channels to batch
-// executions"):
+// Architecture (worker pools with Go channels batch executions):
 //
 //	┌── poll loop (ticker) ──────────────────────────────────────────────┐
 //	│  matchOnce: per asset pair, pair crossing ask/bid under a           │

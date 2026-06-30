@@ -22,7 +22,7 @@ script and rebuild/redeploy.
 ### Build / test / deploy
 
 ```bash
-export PATH="$HOME/.cargo/bin:/c/mingw64/bin:$PATH"     # see STATUS.md toolchain note
+export PATH="$HOME/.cargo/bin:/c/mingw64/bin:$PATH"     # Windows: cargo + mingw on PATH
 
 cd contracts/nyx-verifier
 cargo test                       # 6/6 incl. the REAL proof verifying on-chain (testutils)

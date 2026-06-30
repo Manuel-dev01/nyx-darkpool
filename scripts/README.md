@@ -20,4 +20,4 @@ git-ignored.
 > BN254 `g1_msm` host function). Start a local one with
 > `stellar container start local --protocol-version 26`, or target public **testnet** (protocol 27)
 > with `NYX_SOROBAN_NETWORK=testnet`. The live testnet contract id + a settled tx are recorded in
-> [`../STATUS.md`](../STATUS.md) and [`../contracts/README.md`](../contracts/README.md).
+> [`../contracts/README.md`](../contracts/README.md).

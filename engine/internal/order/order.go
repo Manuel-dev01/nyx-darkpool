@@ -4,8 +4,8 @@
 // Trust model: Nyx shields price/volume from the public chain and mempool — the
 // chain only ever sees the Poseidon commitment and a proof. The off-chain engine
 // is the trusted sequencer/prover, so it MUST see the raw values to match orders
-// and generate their Groth16 proof (CLAUDE.md §2.2: "generate the actual Groth16
-// proof once a match is found ... using the matched orders' raw data").
+// and generate their Groth16 proof from the matched orders' raw data once a
+// match is found.
 //
 // Those raw values live in orders.encrypted_blob as a JSON Payload. For this
 // build the blob is plaintext-at-rest; encrypting it at rest (so a DB dump leaks
