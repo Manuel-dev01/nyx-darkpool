@@ -56,65 +56,74 @@ Just re-run `make demo` and update the explorer link you show.
 
 ## Act 1 — "Nothing is revealed" (the desk + the seal)
 
-1. **Landing (`/`).** One line: *public order books leak institutional intent — large RWA orders get
-   front-run. Nyx matches privately and only a proof touches the chain.* Click **Request desk access**.
-2. **Desk access (`/app/access`).** Click **Generate** — this mints a **real Stellar keypair** in the
-   browser. The **G-address becomes the desk's identity** and signs every order. (Mention: in
-   production this is a Freighter wallet — the secret never touches the page. See
-   [`key-custody.md`](key-custody.md).)
-3. **Compose (`/app/compose`).** Pick a **pair** from the dropdown (e.g. `US-TBILL-26 / USDC`), set
-   **BID · BUY**, price `99.84`, size `5,000,000`. Point at the **SEAL PREVIEW**: as you type, the
-   browser computes a **real Poseidon commitment** (`circomlibjs`, the exact constants the circuit
-   uses). Read the caption aloud: *"price & size never leave this device — the network only ever sees
-   this hash."* **Do not broadcast yet** if you're doing Act 3 manually; broadcast now for Act 2.
+| Shot | Screen | Action | What's on screen / say |
+|------|--------|--------|------------------------|
+| **1.1** | `/` (landing) | Click **Request desk access** | Say: *"public order books leak institutional intent; large RWA orders get front-run. Nyx matches privately and only a proof touches the chain."* |
+| **1.2** | `/app/access` | Click **Generate**, then **Authenticate with new key →** | Mints a **real Stellar keypair** in the browser; the **G-address becomes the desk's identity** and signs every order. Say: *"in production this is a Freighter wallet, the secret never touches the page"* (see [`key-custody.md`](key-custody.md)). |
+| **1.3** | `/app/compose` | Pick pair `US-TBILL-26 / USDC`, **BID · BUY**, price `99.84`, size `5,000,000` | As you type, the **SEAL PREVIEW** computes a **real Poseidon commitment** (`circomlibjs`, the exact constants the circuit uses). Read the caption: *"price & size never leave this device; the network only ever sees this hash."* |
+
+> **Branch here.** For **Act 2** (solo settle) continue straight to **Seal & broadcast** (shot 2.1).
+> For **Act 3** (two desks, manual cross) **do not broadcast yet**; set up the second window first.
 
 ---
 
 ## Act 2 — Solo settle, end-to-end (Demo-Mode ON)
 
-This is the cleanest single-flow proof that the whole pipeline is real. Keep **Demo-Mode ON** (the
-sidebar toggle "Auto-fill counterparty · demo", default on).
+The cleanest single-flow proof that the whole pipeline is real. Keep **Demo-Mode ON** (sidebar toggle
+"Auto-fill counterparty · demo", default on). One window is enough. Shoot it shot by shot:
 
-1. On Compose, click **Seal & broadcast →**. You land on **Pool (`/app/pool`)** — your sealed order
-   sits in the shielded lattice. ~2.5 s later, Demo-Mode posts **one** crossing, **signed**
-   counter-order (same pair/price/size, opposite side, fresh salt) so a solo order can settle.
-2. Go to **Proofs (`/app/proofs`)** and narrate the pipeline as it advances (poll every ~2.5 s):
-   - **Match located** → DONE (the matcher paired your BID with the crossing ASK).
-   - **ZK proof generated** → DONE (`has_proof:true` — snarkjs built the Groth16 witness + proof in
-     the engine; *a wrong commitment can't produce a proof — witness calc fails*).
-   - **Verifying on-chain** → ACTIVE for ~5–15 s, then DONE (the engine invoked `verify_and_settle`
-     on **testnet**; the contract re-ran the BN254 pairing check natively).
-   - **Atomic settlement** → DONE.
-3. **Settled (`/app/settled`).** Heading flips to **"Settled atomically."** Click **View on Stellar
-   Explorer →** — a **real testnet transaction** opens on stellar.expert. This is the money shot:
-   *the operator can't forge fills; the chain re-verified the match.* Click **Download receipt** to
-   save the JSON settlement receipt.
-
-> Talking point while "Verifying on-chain" spins: *"That delay is real — it's the testnet ledger
-> closing. We're not animating a spinner; we're waiting for a block."*
+| Shot | Screen | Action | What's on screen / say |
+|------|--------|--------|------------------------|
+| **2.1** | `/app/compose` | **Seal & broadcast →** (continuing from Act 1) | Routes to **Pool**; your sealed order sits in the shielded lattice; header reads **SEARCHING FOR MATCH**. |
+| **2.2** | `/app/pool` | wait ~2.5 s | Demo-Mode posts **one** crossing, signed counter-order (same pair/price/size, opposite side, fresh salt). Header flips to **MATCH FOUND**; a **View proof →** link appears. |
+| **2.3** | `/app/proofs` | click **View proof →** | **Match located → DONE.** Say: *"the matcher paired your BID with the crossing ASK."* |
+| **2.4** | `/app/proofs` | watch (~3-10 s) | **ZK proof generated → DONE** (`has_proof:true`). Say: *"snarkjs built the Groth16 proof in-engine; a wrong commitment can't even produce a witness."* |
+| **2.5** | `/app/proofs` | watch (~5-15 s) | **Verifying on-chain → DONE.** Say: *"that wait is a real testnet ledger closing, not a spinner."* |
+| **2.6** | `/app/proofs` | (no click) | **Atomic settlement → DONE.** Right panel shows the **settlement tx** + `bn254_pairing` host fn. |
+| **2.7** | `/app/settled` | open **Settled** (sidebar) | Heading flips to **"Settled atomically."**; STATUS = CONFIRMED. |
+| **2.8** | `/app/settled` | click **View on Stellar Explorer →** | A **real testnet transaction** opens on stellar.expert (status SUCCESS). **The money shot:** *the operator can't forge fills; the chain re-verified the match.* |
+| **2.9** | `/app/settled` | click **Download receipt** | Saves `nyx-receipt-*.json` (match + tx + explorer link; **price and size omitted**). |
 
 ---
 
 ## Act 3 — Two desks, two tabs (Demo-Mode OFF, manual cross)
 
-Shows that two **independent** desks settle the **same** match without either learning the other's
-private values — the real institutional story.
+The institutional story: two **independent** desks settle the **same** match, and **neither learns the
+other's price or size**. Demo-Mode OFF means there's no auto-counter, so the cross is a genuine second
+party. Shoot it strictly in order: **Desk 1 rests first, then Desk 2 crosses it.**
 
-1. In **both** tabs, open the sidebar and turn **Demo-Mode OFF**.
-2. **Tab A (Desk 1):** `/app/access` → Generate (Desk 1's keypair) → Compose → pick
-   **`US-TBILL-26 / USDC`**, **BID** `99.84` × `5,000,000` → Seal & broadcast. It rests in the pool
-   (no auto-counter now).
-3. **Tab B (Desk 2):** `/app/access` → Generate (a **different** keypair) → Compose → pick the
-   **same pair** `US-TBILL-26 / USDC`, **ASK** `99.84` × `5,000,000` → Seal & broadcast.
-   > The matcher only crosses **same-pair** orders — both desks must select the same pair. (Show this:
-   > if Tab B picks `EU-BUND-30 / USDC` instead, nothing crosses — different markets don't match.)
-4. The engine pairs the two **real** orders (one shared match). Open **Proofs** in *both* tabs — they
-   converge on the **same** match id and both animate to **Settled** against the **same** testnet tx.
-5. Emphasize: Desk 1 never saw Desk 2's order values and vice-versa; the API never returns price/size
-   (they stay sealed). Two counterparties, one verifiable fill, zero information leakage.
+> ### Critical setup: two SEPARATE storage contexts (do this before shot 3.1)
+> Use **Window A = a normal browser window** and **Window B = an Incognito / Private window** (or two
+> different browser profiles). **NOT two tabs of the same window:** the desk key lives in
+> `localStorage`, which every tab of one profile shares, so two same-profile tabs are the *same* desk
+> (generating a key in one silently overwrites the other). Separate profiles = separate desks. Point
+> **both** windows at **http://localhost:3000**. (For recording: put them side by side so one shot
+> can show both flipping to settled together.)
 
-> **Race fallback (optional aside):** with Demo-Mode left ON, the auto-counter cancels itself the
-> moment a real opposing order (a second tab) appears — so a live counterparty always wins over the
+**Shot list:**
+
+| Shot | Window | Action | What's on screen / say |
+|------|--------|--------|------------------------|
+| **3.1** | **A** | `/app/access` → **Generate** → **Authenticate with new key →** | Desk 1's **G-address** appears in the sidebar. Say: *"Desk 1's identity, a real Stellar key."* |
+| **3.2** | **A** | Sidebar → click the **"Auto-fill counterparty · demo"** toggle **OFF** | The toggle goes dark. Say: *"No bot now, a real counterparty has to show up."* |
+| **3.3** | **A** | **Compose** → pair **`US-TBILL-26 / USDC`**, **BID · BUY**, price `99.84`, size `5,000,000` | SEAL PREVIEW shows Desk 1's live **Poseidon commitment**. |
+| **3.4** | **A** | **Seal & broadcast →** | Lands on **Pool**; the order **rests**; header stays **SEARCHING FOR MATCH** (no auto-fill fires). Say: *"resting, unmatched."* |
+| **3.5** | **B** | `/app/access` → **Generate** → **Authenticate with new key →** | A **different** G-address. Say: *"Desk 2, a separate key in a separate browser."* |
+| **3.6** | **B** | Sidebar → toggle **Demo-Mode OFF** | Toggle dark (same as 3.2). |
+| **3.7** | **B** | **Compose** → **same** pair **`US-TBILL-26 / USDC`**, **ASK · SELL**, price `99.84`, size `5,000,000` | A **different** commitment hash than Desk 1, even though the values match (fresh salt). Say: *"same trade, different seal; neither desk can see the other's numbers."* |
+| **3.8** | **B** | **Seal & broadcast →** | Lands on Pool. Within ~3 s **both** windows flip: header **MATCH FOUND**, order status **MATCHED**, a **View proof →** link appears in each. |
+| **3.9** | **A + B** | each window → **Proofs** (sidebar) | Both show the **same match id** in the header, and both pipelines run Match located → ZK proof → Verifying on-chain → Settled. |
+| **3.10** | **A + B** | each → **Settled** → **View on Stellar Explorer →** | Both open the **same** testnet transaction (status SUCCESS). Say: *"one fill, one transaction, two counterparties."* |
+| **3.11** | (say) | — | *"Desk 1 never saw Desk 2's price or size, and vice-versa. `GET /orders` only ever returns commitments. Two parties, one verifiable fill, zero information leakage."* |
+
+**Two rules worth a deliberate negative shot (each proves the engine isn't faking it):**
+- **Full-fill model, sizes must match exactly.** Both used `5,000,000`. *Negative shot:* in **B** set
+  size `5,000,001` and broadcast: nothing crosses (both rest OPEN). Reset to `5,000,000` to cross.
+- **Same pair only.** *Negative shot:* in **B** pick **`EU-BUND-30 / USDC`** instead and broadcast:
+  nothing crosses. Say: *"different markets never match."* Switch back to `US-TBILL-26 / USDC` to cross.
+
+> **Race fallback (optional aside):** with Demo-Mode left **ON**, the auto-counter stands down the
+> moment a real opposing order (a second window) appears, so a live counterparty always wins over the
 > demo bot. Two desks can never double-match: the engine pairs under SERIALIZABLE isolation with
 > UNIQUE maker/taker constraints as the backstop.
 
