@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Nyx Darkpool — Trade in the dark",
+  title: "Nyx Darkpool · Trade in the dark",
   description:
     "A ZK-shielded RFQ and order-book system for institutional RWA trading on Stellar. Orders are sealed as Poseidon commitments; a zero-knowledge proof attests a valid match; a Soroban contract verifies it on-chain before settling atomically.",
 };
@@ -32,7 +33,10 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
