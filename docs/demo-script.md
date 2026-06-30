@@ -9,6 +9,10 @@ price or size.
 > **The one-liner:** *"Two institutions cross a block trade. The price and size never leave their
 > browsers. The chain sees only a hash and a proof — and still guarantees the fill is real."*
 
+> 🎤 **Want the exact words to say at each screen?** See the companion spoken script:
+> [`demo-narration.md`](demo-narration.md). This file is the *clicks*; that one is the *narration*
+> (same shot numbers).
+
 ---
 
 ## 0. Pre-flight (do this ~5 minutes before)
