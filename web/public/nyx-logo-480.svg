@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 480 480">
+  <!-- Nyx logo — the eclipse mark: a faint full ring (the whole order book) with
+       one luminous crescent (the single match revealed and proven), on the void.
+       Colours match the brand: void #07080A, ring #23272E, lumen #3BD7E0. -->
+  <rect width="480" height="480" rx="108" fill="#07080A"/>
+  <circle cx="240" cy="240" r="150" fill="none" stroke="#23272E" stroke-width="24"/>
+  <circle cx="240" cy="240" r="150" fill="none" stroke="#3BD7E0" stroke-width="24"
+          stroke-linecap="round" stroke-dasharray="630 945" transform="rotate(-62 240 240)"/>
+</svg>
