@@ -140,8 +140,9 @@ The Settled screen's **Download receipt** button saves a JSON settlement receipt
 > "Atomic settlement") only go DONE when the engine reports `onchain_status: confirmed`, which needs
 > on-chain settlement **enabled** (`NYX_SOROBAN_CONTRACT_ID` set). That's the case on the **live
 > deployment** (<https://nyx-darkpool.vercel.app>) and with `make demo`; plain `docker compose` leaves
-> it unset, so those two stages spin `pending` by design. For a live end-to-end demo with a real,
-> browsable settlement tx, open the live site or follow [`../docs/demo-script.md`](../docs/demo-script.md).
+> it unset, so those two stages spin `pending` by design. For a live end-to-end run with a real,
+> browsable settlement tx, open the [live deployment](https://nyx-darkpool.vercel.app) or run
+> `make demo` locally.
 
 ## Layout
 

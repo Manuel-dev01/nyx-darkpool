@@ -34,7 +34,7 @@ log() { echo ">> $*" >&2; }
 # ---------------------------------------------------------------------------
 # Config (override via env).
 # ---------------------------------------------------------------------------
-# The verifier already deployed to public testnet on 2026-06-25 (see STATUS.md).
+# The verifier already deployed to public testnet (see contracts/README.md).
 # We reuse it by default; redeploy only if it's unreachable or NYX_REDEPLOY=1.
 DEFAULT_CID="CBAFC6W5IWQC5AB6LFMFI4KB4DZT23BU2O2AJ2H3B2727DO37DOJGJRV"
 export NYX_SOROBAN_NETWORK="${NYX_SOROBAN_NETWORK:-testnet}"
@@ -108,7 +108,7 @@ cat >&2 <<EOF
 
   NEXT: in a second terminal, start the web app —
       cd web && npm run dev          # http://localhost:3000
-  then open http://localhost:3000 and run the demo (see docs/demo-script.md).
+  then open http://localhost:3000 and run the flow: access -> compose -> pool -> proofs -> settled.
   ───────────────────────────────────────────────────────────────────────────
 
 EOF
